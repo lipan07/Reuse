@@ -1,6 +1,6 @@
 {
   "name": "shanidev",
-  "main": "expo-router/entry",
+  "main": "app/index.js",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -51,6 +51,5 @@
     "react-test-renderer": "18.2.0",
     "typescript": "~5.3.3"
   },
-  "private": true,
-  "main": "app/index.js"
+  "private": true
 }

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Shanidev",
-    "slug": "Shanidev",
+    "name": "Reuse",
+    "slug": "reuse",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/recycle.png",
@@ -38,8 +38,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "a6800d68-3f0b-49a8-be6b-1ddd5b3422cc"
+        "projectId": "87c32591-8ac1-43ea-a9df-7169c400e718"
       }
-    }
+    },
+    "owner": "lipan09"
   }
 }
