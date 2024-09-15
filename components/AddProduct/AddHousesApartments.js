@@ -1,0 +1,322 @@
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+
+const AddHousesApartments = ({ route }) => {
+  const { category, subcategory } = route.params;
+
+  const [formData, setFormData] = useState({
+    type: '',
+    bedroom: '',
+    bathroom: '',
+    furnishing: '',
+    constructionStatus: '',
+    listedBy: '',
+    carParking: '',
+    facing: '',
+    superBuiltupArea: '',
+    carpetArea: '',
+    maintenance: '',
+    totalFloors: '',
+    floorNo: '',
+    projectName: '',
+    adTitle: '',
+    description: '',
+    amount: '',
+    images: [],
+  });
+
+  const handleChange = (name, value) => {
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleOptionSelection = (name, value) => {
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleImagePick = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      aspect: [4, 3],
+      quality: 1,
+      allowsMultipleSelection: true,
+    });
+
+    if (!result.canceled) {
+      setFormData({ ...formData, images: result.assets.map(asset => asset.uri) });
+    }
+  };
+
+  const handleSubmit = async () => {
+    const formDataToSend = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (key === 'images') {
+        formData.images.forEach((imageUri, index) => {
+          formDataToSend.append('images[]', {
+            uri: imageUri,
+            type: 'image/jpeg',
+            name: `image${index}.jpg`,
+          });
+        });
+      } else {
+        formDataToSend.append(key, formData[key]);
+      }
+    });
+
+    try {
+      const response = await fetch('/api/houses-apartments', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'House/Apartment details submitted successfully!');
+      } else {
+        console.error('Error submitting form:', response.statusText);
+        Alert.alert('Error', 'There was an issue submitting the form.');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        contentInset={{ bottom: 80 }} // Ensure content is not hidden under the button
+        contentInsetAdjustmentBehavior="always"
+      >
+        {/* Type Selection */}
+        <Text style={styles.label}>Type *</Text>
+        <View style={styles.optionContainer}>
+          {['Apartments', 'Builder Floors', 'Farm Houses', 'Houses & Villas'].map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.optionButton, formData.type === option && styles.selectedOption]}
+              onPress={() => handleOptionSelection('type', option)}
+            >
+              <Text style={formData.type === option ? styles.selectedText : styles.optionText}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Bedroom Selection */}
+        <Text style={styles.label}>Bedroom *</Text>
+        <View style={styles.optionContainer}>
+          {['1', '2', '3', '4', '4+'].map((bedroom) => (
+            <TouchableOpacity
+              key={bedroom}
+              style={[styles.optionButton, formData.bedroom === bedroom && styles.selectedOption]}
+              onPress={() => handleOptionSelection('bedroom', bedroom)}
+            >
+              <Text style={formData.bedroom === bedroom ? styles.selectedText : styles.optionText}>{bedroom}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Bathroom Selection */}
+        <Text style={styles.label}>Bathroom *</Text>
+        <View style={styles.optionContainer}>
+          {['1', '2', '3', '4', '4+'].map((bathroom) => (
+            <TouchableOpacity
+              key={bathroom}
+              style={[styles.optionButton, formData.bathroom === bathroom && styles.selectedOption]}
+              onPress={() => handleOptionSelection('bathroom', bathroom)}
+            >
+              <Text style={formData.bathroom === bathroom ? styles.selectedText : styles.optionText}>{bathroom}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Furnishing Selection */}
+        <Text style={styles.label}>Furnishing *</Text>
+        <View style={styles.optionContainer}>
+          {['Furnished', 'Semi-Furnished', 'Unfurnished'].map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.optionButton, formData.furnishing === option && styles.selectedOption]}
+              onPress={() => handleOptionSelection('furnishing', option)}
+            >
+              <Text style={formData.furnishing === option ? styles.selectedText : styles.optionText}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Construction Status Selection */}
+        <Text style={styles.label}>Construction Status *</Text>
+        <View style={styles.optionContainer}>
+          {['New Launch', 'Under Construction', 'Ready to Move'].map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.optionButton, formData.constructionStatus === option && styles.selectedOption]}
+              onPress={() => handleOptionSelection('constructionStatus', option)}
+            >
+              <Text style={formData.constructionStatus === option ? styles.selectedText : styles.optionText}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Listed By Selection */}
+        <Text style={styles.label}>Listed By *</Text>
+        <View style={styles.optionContainer}>
+          {['Builder', 'Owner', 'Dealer'].map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.optionButton, formData.listedBy === option && styles.selectedOption]}
+              onPress={() => handleOptionSelection('listedBy', option)}
+            >
+              <Text style={formData.listedBy === option ? styles.selectedText : styles.optionText}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Car Parking Selection */}
+        <Text style={styles.label}>Car Parking *</Text>
+        <View style={styles.optionContainer}>
+          {['0', '1', '2', '3', '3+'].map((parking) => (
+            <TouchableOpacity
+              key={parking}
+              style={[styles.optionButton, formData.carParking === parking && styles.selectedOption]}
+              onPress={() => handleOptionSelection('carParking', parking)}
+            >
+              <Text style={formData.carParking === parking ? styles.selectedText : styles.optionText}>{parking}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Super Builtup Area */}
+        <Text style={styles.label}>Super Builtup Area (ft²)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Super Builtup Area"
+          keyboardType="numeric"
+          value={formData.superBuiltupArea}
+          onChangeText={(value) => handleChange('superBuiltupArea', value)}
+        />
+
+        {/* Carpet Area */}
+        <Text style={styles.label}>Carpet Area (ft²) *</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Carpet Area"
+          keyboardType="numeric"
+          value={formData.carpetArea}
+          onChangeText={(value) => handleChange('carpetArea', value)}
+        />
+
+        {/* Other fields... */}
+
+        {/* Image Picker */}
+        <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+          <Text style={styles.imagePickerText}>Pick Images</Text>
+        </TouchableOpacity>
+
+        {/* Image Display */}
+        <View style={styles.imageContainer}>
+          {formData.images.map((imageUri, index) => (
+            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+          ))}
+        </View>
+      </ScrollView>
+      {/* Fixed Submit Button */}
+      <View style={styles.stickyButton}>
+        <Button title="Submit" onPress={handleSubmit} />
+      </View>
+    </KeyboardAvoidingView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContainer: {
+    paddingBottom: 150, // Increase to avoid overlap
+    paddingHorizontal: 16,
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 20,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    // justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  optionButton: {
+    borderWidth: 1,
+    borderColor: '#007BFF',
+    borderRadius: 8,
+    padding: 10,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  selectedOption: {
+    backgroundColor: '#007BFF',
+  },
+  optionText: {
+    fontSize: 16,
+    color: '#007BFF',
+  },
+  selectedText: {
+    color: '#fff',
+  },
+  imagePicker: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  imagePickerText: {
+    color: '#fff',
+  },
+  imageContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  image: {
+    width: 100,
+    height: 100,
+    margin: 5,
+  },
+  stickyButton: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: '#fff',
+    elevation: 3, // Add shadow for Android
+    zIndex: 1, // Ensure it's above the ScrollView
+  },
+});
+
+export default AddHousesApartments;
