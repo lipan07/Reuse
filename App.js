@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import AppNavigator from './components/AppNavigator'; // Import your AppNavigator
+import AppNavigator from './components/AppNavigator';
 import Header from './components/Header';
 
 const HomeScreen = () => {
