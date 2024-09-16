@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
+import { BASE_URL, TOKEN } from '@env';
 
 const AddCarForm = ({ route }) => {
   const { category } = route.params;
+  // console.log(category);
   const [formData, setFormData] = useState({
     brand: '',
     year: '',
@@ -68,20 +70,33 @@ const AddCarForm = ({ route }) => {
       }
     });
 
+    formDataToSend.append('category_id', category.id);
+    formDataToSend.append('guard_name', category.guard_name);
+    formDataToSend.append('post_type', 'sell');
+
     try {
-      const response = await fetch('/api/car', {
+      const response = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
         body: formDataToSend,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${TOKEN}`
+        },
       });
 
+      // const errorData = await response.json();
+      console.log(response);
+      console.log(response.json());
       if (response.ok) {
         Alert.alert('Success', 'Car details submitted successfully!');
       } else {
-        console.error('Error submitting form:', response.statusText);
+        const errorData = await response.json();
+        console.error('Error submitting form:', errorData);
         Alert.alert('Error', 'There was an issue submitting the form.');
       }
     } catch (error) {
       console.error('Error submitting form:', error);
+      Alert.alert('Error', 'There was an issue submitting the form.');
     }
   };
 
@@ -103,63 +118,74 @@ const AddCarForm = ({ route }) => {
           style={styles.input}
         >
           <Picker.Item label="Select Brand" value="" />
-          <Picker.Item label="Maruti Suzuki" value="maruti-suzuki" />
-          <Picker.Item label="Hyundai" value="hyundai" />
-          <Picker.Item label="Tata" value="tata" />
-          <Picker.Item label="Mahindra" value="mahindra" />
-          <Picker.Item label="Toyota" value="toyota" />
-          <Picker.Item label="Honda" value="cars-honda" />
-          <Picker.Item label="BYD" value="byd" />
-          <Picker.Item label="Audi" value="audi-1" />
-          <Picker.Item label="Ambassador" value="ambassador-1" />
-          <Picker.Item label="Ashok" value="ashok-1" />
-          <Picker.Item label="Ashok Leyland" value="ashok-leyland-1" />
-          <Picker.Item label="Aston Martin" value="aston-martin-1" />
-          <Picker.Item label="Bajaj" value="bajaj" />
-          <Picker.Item label="Bentley" value="bentley-1" />
-          <Picker.Item label="Citroen" value="citroen-1" />
-          <Picker.Item label="Tesla" value="tesla-1" />
-          <Picker.Item label="BMW" value="bmw" />
-          <Picker.Item label="Bugatti" value="bugatti" />
-          <Picker.Item label="Cadillac" value="cadillac" />
-          <Picker.Item label="Chevrolet" value="chevrolet" />
-          <Picker.Item label="Chrysler" value="chrysler" />
-          <Picker.Item label="Daewoo" value="daewoo" />
-          <Picker.Item label="Datsun" value="datsun" />
-          <Picker.Item label="Dc" value="dc" />
-          <Picker.Item label="Eicher Polaris" value="eicher-polaris" />
-          <Picker.Item label="Ferrari" value="ferrari" />
-          <Picker.Item label="Fiat" value="fiat" />
-          <Picker.Item label="Force Motors" value="force-motors" />
-          <Picker.Item label="Ford" value="ford" />
-          <Picker.Item label="Hummer" value="hummer" />
-          <Picker.Item label="ICML" value="icml" />
-          <Picker.Item label="Isuzu" value="isuzu" />
-          <Picker.Item label="Jaguar" value="jaguar" />
-          <Picker.Item label="Jeep" value="jeep" />
-          <Picker.Item label="Kia" value="kia" />
-          <Picker.Item label="Lamborghini" value="lamborghini" />
-          <Picker.Item label="Land Rover" value="land-rover" />
-          <Picker.Item label="Lexus" value="lexus" />
-          <Picker.Item label="Mahindra Renault" value="mahindra-renault" />
-          <Picker.Item label="Maserati" value="maserati" />
-          <Picker.Item label="Maybach" value="maybach" />
-          <Picker.Item label="Mazda" value="mazda" />
-          <Picker.Item label="Mercedes-Benz" value="mercedes-benz" />
-          <Picker.Item label="MG" value="mg" />
-          <Picker.Item label="Mini" value="mini" />
-          <Picker.Item label="Mitsubishi" value="mitsubishi" />
-          <Picker.Item label="Nissan" value="nissan" />
-          <Picker.Item label="Opel" value="opel" />
-          <Picker.Item label="Porsche" value="porsche" />
-          <Picker.Item label="Premier" value="premier" />
-          <Picker.Item label="Renault" value="renault" />
-          <Picker.Item label="Rolls-Royce" value="rolls-royce" />
-          <Picker.Item label="Skoda" value="skoda" />
-          <Picker.Item label="Ssangyong" value="ssangyong" />
-          <Picker.Item label="Volkswagen" value="volkswagen" />
-          <Picker.Item label="Volvo" value="volvo" />
-          <Picker.Item label="Others" value="Others" />
+          <Picker.Item label="Maruti Suzuki" value="Maruti Suzuki" />
+          <Picker.Item label="Hyundai" value="Hyundai" />
+          <Picker.Item label="Tata" value="Tata" />
+          <Picker.Item label="Mahindra" value="Mahindra" />
+          <Picker.Item label="Toyota" value="Toyota" />
+          <Picker.Item label="Honda" value="Honda" />
+          <Picker.Item label="BYD" value="BYD" />
+          <Picker.Item label="Audi" value="Audi" />
+          <Picker.Item label="Ambassador" value="Ambassador" />
+          <Picker.Item label="Ashok" value="Ashok" />
+          <Picker.Item label="Ashok Leyland" value="Ashok Leyland" />
+          <Picker.Item label="Aston" value="Aston" />
+          <Picker.Item label="Aston Martin" value="Aston Martin" />
+          <Picker.Item label="Bajaj" value="Bajaj" />
+          <Picker.Item label="Bentley" value="Bentley" />
+          <Picker.Item label="Citroen" value="Citroen" />
+          <Picker.Item label="McLaren" value="McLaren" />
+          <Picker.Item label="Fisker" value="Fisker" />
+          <Picker.Item label="BMW" value="BMW" />
+          <Picker.Item label="Bugatti" value="Bugatti" />
+          <Picker.Item label="Cadillac" value="Cadillac" />
+          <Picker.Item label="Caterham" value="Caterham" />
+          <Picker.Item label="Chevrolet" value="Chevrolet" />
+          <Picker.Item label="Chrysler" value="Chrysler" />
+          <Picker.Item label="Conquest" value="Conquest" />
+          <Picker.Item label="Daewoo" value="Daewoo" />
+          <Picker.Item label="Datsun" value="Datsun" />
+          <Picker.Item label="Dc" value="Dc" />
+          <Picker.Item label="Dodge" value="Dodge" />
+          <Picker.Item label="Eicher Polaris" value="Eicher Polaris" />
+          <Picker.Item label="Ferrari" value="Ferrari" />
+          <Picker.Item label="Fiat" value="Fiat" />
+          <Picker.Item label="Force Motors" value="Force Motors" />
+          <Picker.Item label="Ford" value="Ford" />
+          <Picker.Item label="Hummer" value="Hummer" />
+          <Picker.Item label="ICML" value="ICML" />
+          <Picker.Item label="Infiniti" value="Infiniti" />
+          <Picker.Item label="Isuzu" value="Isuzu" />
+          <Picker.Item label="Jaguar" value="Jaguar" />
+          <Picker.Item label="Jeep" value="Jeep" />
+          <Picker.Item label="Kia" value="Kia" />
+          <Picker.Item label="Lamborghini" value="Lamborghini" />
+          <Picker.Item label="Land Rover" value="Land Rover" />
+          <Picker.Item label="Lexus" value="Lexus" />
+          <Picker.Item label="Mahindra Renault" value="Mahindra Renault" />
+          <Picker.Item label="Maserati" value="Maserati" />
+          <Picker.Item label="Maybach" value="Maybach" />
+          <Picker.Item label="Mazda" value="Mazda" />
+          <Picker.Item label="Mercedes-Benz" value="Mercedes-Benz" />
+          <Picker.Item label="MG" value="MG" />
+          <Picker.Item label="Mini" value="Mini" />
+          <Picker.Item label="Mitsubishi" value="Mitsubishi" />
+          <Picker.Item label="Nissan" value="Nissan" />
+          <Picker.Item label="Opel" value="Opel" />
+          <Picker.Item label="Peugeot" value="Peugeot" />
+          <Picker.Item label="Porsche" value="Porsche" />
+          <Picker.Item label="Premier" value="Premier" />
+          <Picker.Item label="Renault" value="Renault" />
+          <Picker.Item label="Rolls-Royce" value="Rolls-Royce" />
+          <Picker.Item label="San" value="San" />
+          <Picker.Item label="Sipani" value="Sipani" />
+          <Picker.Item label="Skoda" value="Skoda" />
+          <Picker.Item label="Smart" value="Smart" />
+          <Picker.Item label="Ssangyong" value="Ssangyong" />
+          <Picker.Item label="Subaru" value="Subaru" />
+          <Picker.Item label="Volkswagen" value="Volkswagen" />
+          <Picker.Item label="Volvo" value="Volvo" />
+          <Picker.Item label="Other Brands" value="Other Brands" />
         </Picker>
 
         {/* Year Field */}
