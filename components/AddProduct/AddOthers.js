@@ -76,7 +76,7 @@ const AddOthers = ({ route }) => {
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
           title: 'Success',
-          textBody: 'Car details submitted successfully!',
+          textBody: 'Others details submitted successfully!',
           button: 'close',
         });
       } else {
