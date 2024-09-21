@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { BASE_URL, TOKEN } from '@env';
 
 const AddCommercialHeavyMachinery = ({ route }) => {
-  const { category } = route.params;
+  const { category, subcategory } = route.params;
   const [formData, setFormData] = useState({
     brand: '',
     year: '',
@@ -73,198 +75,226 @@ const AddCommercialHeavyMachinery = ({ route }) => {
       }
     });
 
+    formDataToSend.append('category_id', subcategory.id);
+    formDataToSend.append('guard_name', subcategory.guard_name);
+    formDataToSend.append('post_type', 'sell');
+    formDataToSend.append('address', 'India');
+    console.log(formDataToSend);
     try {
-      const response = await fetch('/api/car', {
+      const response = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
         body: formDataToSend,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${TOKEN}`
+        },
       });
 
+      const responseData = await response.json();
+      console.log(responseData);
       if (response.ok) {
-        Alert.alert('Success', 'Car details submitted successfully!');
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Details submitted successfully!',
+          button: 'close',
+        });
       } else {
-        console.error('Error submitting form:', response.statusText);
-        Alert.alert('Error', 'There was an issue submitting the form.');
+        Dialog.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'Validation Error',
+          textBody: responseData.message,
+          button: 'close',
+        });
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: 'Error',
+        textBody: 'There was an issue submitting the form.',
+        button: 'close',
+      });
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.formHeader}>
-          Add Product - {category.name}
-        </Text>
+    <AlertNotificationRoot>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <Text style={styles.formHeader}>
+            Add Product - {category.name}
+          </Text>
 
-        {/* Brand Field */}
-        <Text style={styles.label}>Brand:</Text>
-        <Picker
-          selectedValue={formData.brand}
-          onValueChange={(value) => handleChange('brand', value)}
-          style={styles.input}
-        >
-          <Picker.Item label="Select Brand" value="" />
-          <Picker.Item value="caterpillar" label="Caterpillar" />
-          <Picker.Item value="jcb" label="JCB" />
-          <Picker.Item value="tata_hitachi" label="Tata Hitachi" />
-          <Picker.Item value="volvo" label="Volvo" />
-          <Picker.Item value="komatsu" label="Komatsu" />
-          <Picker.Item value="l_t_c_e" label="L&T Construction Equipment" />
-          <Picker.Item value="beml" label="BEML (Bharat Earth Movers Limited)" />
-          <Picker.Item value="h_c_e" label="Hyundai Construction Equipment" />
-          <Picker.Item value="sany" label="SANY" />
-          <Picker.Item value="cc" label="Case Construction" />
-          <Picker.Item value="doosan" label="Doosan" />
-          <Picker.Item value="mce" label="Mahindra Construction Equipment" />
-          <Picker.Item value="liugong" label="LiuGong" />
-          <Picker.Item value="john_deere" label="John Deere" />
-          <Picker.Item value="xcmg" label="XCMG" />
-          <Picker.Item value="others" label="Others" />
-        </Picker>
+          {/* Brand Field */}
+          <Text style={styles.label}>Brand:</Text>
+          <Picker
+            selectedValue={formData.brand}
+            onValueChange={(value) => handleChange('brand', value)}
+            style={styles.input}
+          >
+            <Picker.Item label="Select Brand" value="" />
+            <Picker.Item value="caterpillar" label="Caterpillar" />
+            <Picker.Item value="jcb" label="JCB" />
+            <Picker.Item value="tata_hitachi" label="Tata Hitachi" />
+            <Picker.Item value="volvo" label="Volvo" />
+            <Picker.Item value="komatsu" label="Komatsu" />
+            <Picker.Item value="l_t_c_e" label="L&T Construction Equipment" />
+            <Picker.Item value="beml" label="BEML (Bharat Earth Movers Limited)" />
+            <Picker.Item value="h_c_e" label="Hyundai Construction Equipment" />
+            <Picker.Item value="sany" label="SANY" />
+            <Picker.Item value="cc" label="Case Construction" />
+            <Picker.Item value="doosan" label="Doosan" />
+            <Picker.Item value="mce" label="Mahindra Construction Equipment" />
+            <Picker.Item value="liugong" label="LiuGong" />
+            <Picker.Item value="john_deere" label="John Deere" />
+            <Picker.Item value="xcmg" label="XCMG" />
+            <Picker.Item value="others" label="Others" />
+          </Picker>
 
-        {/* Condition Selection */}
-        <Text style={styles.label}>Condition *</Text>
-        <View style={styles.optionContainer}>
-          {['New', 'Used', 'Needs Repair'].map((condition) => (
-            <TouchableOpacity
-              key={condition}
-              style={[styles.optionButton, formData.conditionType === condition && styles.selectedOption]}
-              onPress={() => handleConditionSelection(condition)}
-            >
-              <Text style={formData.conditionType === condition ? styles.selectedText : styles.optionText}>{condition}</Text>
-            </TouchableOpacity>
-          ))}
+          {/* Condition Selection */}
+          <Text style={styles.label}>Condition *</Text>
+          <View style={styles.optionContainer}>
+            {['New', 'Used', 'Needs Repair'].map((condition) => (
+              <TouchableOpacity
+                key={condition}
+                style={[styles.optionButton, formData.conditionType === condition && styles.selectedOption]}
+                onPress={() => handleConditionSelection(condition)}
+              >
+                <Text style={formData.conditionType === condition ? styles.selectedText : styles.optionText}>{condition}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Year Field */}
+          <Text style={styles.label}>Year *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Year"
+            keyboardType="numeric"
+            value={formData.year}
+            onChangeText={(value) => handleChange('year', value)}
+          />
+
+          {/* Fuel Type Selection */}
+          <Text style={styles.label}>Fuel Type *</Text>
+          <View style={styles.optionContainer}>
+            {['Diesel', 'Electric', 'Others'].map((fuel) => (
+              <TouchableOpacity
+                key={fuel}
+                style={[styles.optionButton, formData.fuelType === fuel && styles.selectedOption]}
+                onPress={() => handleFuelSelection(fuel)}
+              >
+                <Text style={formData.fuelType === fuel ? styles.selectedText : styles.optionText}>{fuel}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Transmission Selection */}
+          <Text style={styles.label}>Transmission *</Text>
+          <View style={styles.optionContainer}>
+            {['Automatic', 'Manual'].map((trans) => (
+              <TouchableOpacity
+                key={trans}
+                style={[styles.optionButton, formData.transmission === trans && styles.selectedOption]}
+                onPress={() => handleTransmissionSelection(trans)}
+              >
+                <Text style={formData.transmission === trans ? styles.selectedText : styles.optionText}>{trans}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* KM Driven Field */}
+          <Text style={styles.label}>KM Driven *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter KM Driven"
+            keyboardType="numeric"
+            value={formData.kmDriven}
+            onChangeText={(value) => handleChange('kmDriven', value)}
+          />
+
+          {/* Number of Owners Selection */}
+          <Text style={styles.label}>Number of Owners *</Text>
+          <View style={styles.optionContainer}>
+            {['1st', '2nd', '3rd', '4th', '5th', '6th'].map((owner) => (
+              <TouchableOpacity
+                key={owner}
+                style={[styles.optionButton, formData.owners === owner && styles.selectedOption]}
+                onPress={() => handleOwnersSelection(owner)}
+              >
+                <Text style={formData.owners === owner ? styles.selectedText : styles.optionText}>{owner}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Listed By *</Text>
+          <View style={styles.optionContainer}>
+            {['Dealer', 'Owner'].map((listedByOption) => (
+              <TouchableOpacity
+                key={listedByOption}
+                style={[styles.optionButton, formData.listedBy === listedByOption && styles.selectedOption]}
+                onPress={() => handleChange('listedBy', listedByOption)}
+              >
+                <Text style={formData.listedBy === listedByOption ? styles.selectedText : styles.optionText}>
+                  {listedByOption}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Ad Title Field */}
+          <Text style={styles.label}>Ad Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Ad Title"
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
+          />
+
+          {/* Description Field */}
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            placeholder="Enter Description"
+            value={formData.description}
+            multiline
+            onChangeText={(value) => handleChange('description', value)}
+          />
+
+          {/* Amount Field */}
+          <Text style={styles.label}>Amount *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Amount"
+            keyboardType="numeric"
+            value={formData.amount}
+            onChangeText={(value) => handleChange('amount', value)}
+          />
+
+          {/* Image Picker */}
+          <Text style={styles.label}>Select Images</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+            <Text style={styles.imagePickerText}>Pick images</Text>
+          </TouchableOpacity>
+
+          {/* Display Selected Images */}
+          <View style={styles.imagesContainer}>
+            {formData.images.map((imageUri, index) => (
+              <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Fixed Submit Button */}
+        <View style={styles.stickyButton}>
+          <Button title="Submit" onPress={handleSubmit} />
         </View>
-
-        {/* Year Field */}
-        <Text style={styles.label}>Year *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Year"
-          keyboardType="numeric"
-          value={formData.year}
-          onChangeText={(value) => handleChange('year', value)}
-        />
-
-        {/* Fuel Type Selection */}
-        <Text style={styles.label}>Fuel Type *</Text>
-        <View style={styles.optionContainer}>
-          {['Diesel', 'Electric', 'Others'].map((fuel) => (
-            <TouchableOpacity
-              key={fuel}
-              style={[styles.optionButton, formData.fuelType === fuel && styles.selectedOption]}
-              onPress={() => handleFuelSelection(fuel)}
-            >
-              <Text style={formData.fuelType === fuel ? styles.selectedText : styles.optionText}>{fuel}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Transmission Selection */}
-        <Text style={styles.label}>Transmission *</Text>
-        <View style={styles.optionContainer}>
-          {['Automatic', 'Manual'].map((trans) => (
-            <TouchableOpacity
-              key={trans}
-              style={[styles.optionButton, formData.transmission === trans && styles.selectedOption]}
-              onPress={() => handleTransmissionSelection(trans)}
-            >
-              <Text style={formData.transmission === trans ? styles.selectedText : styles.optionText}>{trans}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* KM Driven Field */}
-        <Text style={styles.label}>KM Driven *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter KM Driven"
-          keyboardType="numeric"
-          value={formData.kmDriven}
-          onChangeText={(value) => handleChange('kmDriven', value)}
-        />
-
-        {/* Number of Owners Selection */}
-        <Text style={styles.label}>Number of Owners *</Text>
-        <View style={styles.optionContainer}>
-          {['1st', '2nd', '3rd', '4th', '5th', '6th'].map((owner) => (
-            <TouchableOpacity
-              key={owner}
-              style={[styles.optionButton, formData.owners === owner && styles.selectedOption]}
-              onPress={() => handleOwnersSelection(owner)}
-            >
-              <Text style={formData.owners === owner ? styles.selectedText : styles.optionText}>{owner}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Listed By *</Text>
-        <View style={styles.optionContainer}>
-          {['Dealer', 'Owner'].map((listedByOption) => (
-            <TouchableOpacity
-              key={listedByOption}
-              style={[styles.optionButton, formData.listedBy === listedByOption && styles.selectedOption]}
-              onPress={() => handleChange('listedBy', listedByOption)}
-            >
-              <Text style={formData.listedBy === listedByOption ? styles.selectedText : styles.optionText}>
-                {listedByOption}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Ad Title Field */}
-        <Text style={styles.label}>Ad Title *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Ad Title"
-          value={formData.adTitle}
-          onChangeText={(value) => handleChange('adTitle', value)}
-        />
-
-        {/* Description Field */}
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="Enter Description"
-          value={formData.description}
-          multiline
-          onChangeText={(value) => handleChange('description', value)}
-        />
-
-        {/* Amount Field */}
-        <Text style={styles.label}>Amount *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Amount"
-          keyboardType="numeric"
-          value={formData.amount}
-          onChangeText={(value) => handleChange('amount', value)}
-        />
-
-        {/* Image Picker */}
-        <Text style={styles.label}>Select Images</Text>
-        <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-          <Text style={styles.imagePickerText}>Pick images</Text>
-        </TouchableOpacity>
-
-        {/* Display Selected Images */}
-        <View style={styles.imagesContainer}>
-          {formData.images.map((imageUri, index) => (
-            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* Fixed Submit Button */}
-      <View style={styles.stickyButton}>
-        <Button title="Submit" onPress={handleSubmit} />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </AlertNotificationRoot>
   );
 };
 

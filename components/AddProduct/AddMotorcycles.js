@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { BASE_URL, TOKEN } from '@env';
 
 const AddMotorcycles = ({ route }) => {
   const { category, subcategory } = route.params;
   const [formData, setFormData] = useState({
     brand: '',
-    title: '',
+    adTitle: '',
     year: '',
     km_driven: '',
     description: '',
@@ -41,162 +43,200 @@ const AddMotorcycles = ({ route }) => {
   const handleSubmit = async () => {
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
-      formDataToSend.append(key, formData[key]);
+      if (key === 'images') {
+        formData.images.forEach((imageUri, index) => {
+          formDataToSend.append('images[]', {
+            uri: imageUri,
+            type: 'image/jpeg',
+            name: `image_${index}.jpg`,
+          });
+        });
+      } else {
+        formDataToSend.append(key, formData[key]);
+      }
     });
 
+    formDataToSend.append('category_id', subcategory.id);
+    formDataToSend.append('guard_name', subcategory.guard_name);
+    formDataToSend.append('post_type', 'sell');
+    formDataToSend.append('address', 'India');
+    console.log(formDataToSend);
     try {
-      const response = await fetch('/api/mobile-tablets', {
+      const response = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
         body: formDataToSend,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${TOKEN}`
+        },
       });
 
+      const responseData = await response.json();
+      console.log(responseData);
       if (response.ok) {
-        Alert.alert('Success', 'Mobile/Tablet details submitted successfully!');
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Details submitted successfully!',
+          button: 'close',
+        });
       } else {
-        console.error('Error submitting form:', response.statusText);
-        Alert.alert('Error', 'There was an issue submitting the form.');
+        Dialog.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'Validation Error',
+          textBody: responseData.message,
+          button: 'close',
+        });
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: 'Error',
+        textBody: 'There was an issue submitting the form.',
+        button: 'close',
+      });
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.formHeader}>Add Motorcycles</Text>
+    <AlertNotificationRoot>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <Text style={styles.formHeader}>Add Motorcycles</Text>
 
-        {/* Brand Selection */}
-        <Text style={styles.label}>Brand *</Text>
-        <Picker
-          selectedValue={formData.brand}
-          onValueChange={(value) => handleChange('brand', value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Select Brand" value="" />
-          <Picker.Item value="motorcycles-harley" label="Harley-Davidson" />
-          <Picker.Item value="motorcycles-yezdi" label="Yezdi" />
-          <Picker.Item value="motorcycles-bmw" label="BMW" />
-          <Picker.Item value="motorcycles-kawasaki" label="Kawasaki" />
-          <Picker.Item value="motorcycles-revolt" label="Revolt" />
-          <Picker.Item value="motorcycles-ducati" label="Ducati" />
-          <Picker.Item value="motorcycles-jawa" label="Jawa" />
-          <Picker.Item value="motorcycles-beneli" label="Benelli" />
-          <Picker.Item value="aprilia" label="Aprilia" />
-          <Picker.Item value="avanturaa-choppers" label="Avanturaa Choppers" />
-          <Picker.Item value="bsa" label="BSA" />
-          <Picker.Item value="cfmoto" label="CFMoto" />
-          <Picker.Item value="cleveland-cyclewerks" label="Cleveland CycleWerks" />
-          <Picker.Item value="eider" label="Eider" />
-          <Picker.Item value="emflux-motors" label="Emflux Motors" />
-          <Picker.Item value="escorts" label="Escorts" />
-          <Picker.Item value="evolet" label="Evolet" />
-          <Picker.Item value="fb-mondial" label="FB Mondial" />
-          <Picker.Item value="hero-electric" label="Hero Electric" />
-          <Picker.Item value="hop-electric" label="Hop Electric" />
-          <Picker.Item value="husqvarna" label="Husqvarna" />
-          <Picker.Item value="hyosung" label="Hyosung" />
-          <Picker.Item value="indian" label="Indian" />
-          <Picker.Item value="keeway" label="Keeway" />
-          <Picker.Item value="lml" label="LML" />
-          <Picker.Item value="mahindra" label="Mahindra" />
-          <Picker.Item value="matter" label="Matter" />
-          <Picker.Item value="moto-guzzi" label="Moto Guzzi" />
-          <Picker.Item value="moto-morini" label="Moto Morini" />
-          <Picker.Item value="mv-agusta" label="MV Agusta" />
-          <Picker.Item value="norton" label="Norton" />
-          <Picker.Item value="odysse" label="Odysse" />
-          <Picker.Item value="okinawa" label="Okinawa" />
-          <Picker.Item value="ola" label="OLA" />
-          <Picker.Item value="pure-ev" label="PURE EV" />
-          <Picker.Item value="qj-motor" label="QJ Motor" />
-          <Picker.Item value="swm" label="SWM" />
-          <Picker.Item value="tork" label="Tork" />
-          <Picker.Item value="triumph" label="Triumph" />
-          <Picker.Item value="um" label="UM" />
-          <Picker.Item value="vespa" label="Vespa" />
-          <Picker.Item value="victory" label="Victory" />
-          <Picker.Item value="vida" label="Vida" />
-          <Picker.Item value="zontes" label="Zontes" />
-          <Picker.Item value="motorcycles-bajaj" label="Bajaj" />
-          <Picker.Item value="hero-motorcycle" label="Hero" />
-          <Picker.Item value="hero-honda" label="Hero Honda" />
-          <Picker.Item value="honda" label="Honda" />
-          <Picker.Item value="ktm" label="KTM" />
-          <Picker.Item value="royal-enfield" label="Royal Enfield" />
-          <Picker.Item value="suzuki" label="Suzuki" />
-          <Picker.Item value="tvs" label="TVS" />
-          <Picker.Item value="yamaha" label="Yamaha" />
-          <Picker.Item value="motorcycles-other" label="Other Brands" />
-        </Picker>
+          {/* Brand Selection */}
+          <Text style={styles.label}>Brand *</Text>
+          <Picker
+            selectedValue={formData.brand}
+            onValueChange={(value) => handleChange('brand', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Brand" value="" />
+            <Picker.Item value="Harley-Davidson" label="Harley-Davidson" />
+            <Picker.Item value="Yezdi" label="Yezdi" />
+            <Picker.Item value="BMW" label="BMW" />
+            <Picker.Item value="Kawasaki" label="Kawasaki" />
+            <Picker.Item value="Revolt" label="Revolt" />
+            <Picker.Item value="Ducati" label="Ducati" />
+            <Picker.Item value="Jawa" label="Jawa" />
+            <Picker.Item value="Benelli" label="Benelli" />
+            <Picker.Item value="aprilia" label="Aprilia" />
+            <Picker.Item value="Avanturaa Choppers" label="Avanturaa Choppers" />
+            <Picker.Item value="BSA" label="BSA" />
+            <Picker.Item value="cfmoto" label="CFMoto" />
+            <Picker.Item value="cleveland-cyclewerks" label="Cleveland CycleWerks" />
+            <Picker.Item value="Eider" label="Eider" />
+            <Picker.Item value="Emflux Motors" label="Emflux Motors" />
+            <Picker.Item value="Escorts" label="Escorts" />
+            <Picker.Item value="Evolet" label="Evolet" />
+            <Picker.Item value="FB Mondial" label="FB Mondial" />
+            <Picker.Item value="Hero Electric" label="Hero Electric" />
+            <Picker.Item value="Hop Electric" label="Hop Electric" />
+            <Picker.Item value="Husqvarna" label="Husqvarna" />
+            <Picker.Item value="Hyosung" label="Hyosung" />
+            <Picker.Item value="Indian" label="Indian" />
+            <Picker.Item value="Keeway" label="Keeway" />
+            <Picker.Item value="LML" label="LML" />
+            <Picker.Item value="Mahindra" label="Mahindra" />
+            <Picker.Item value="Matter" label="Matter" />
+            <Picker.Item value="Moto Guzzi" label="Moto Guzzi" />
+            <Picker.Item value="Moto Morini" label="Moto Morini" />
+            <Picker.Item value="MV Agusta" label="MV Agusta" />
+            <Picker.Item value="Norton" label="Norton" />
+            <Picker.Item value="Odysse" label="Odysse" />
+            <Picker.Item value="Okinawa" label="Okinawa" />
+            <Picker.Item value="OLA" label="OLA" />
+            <Picker.Item value="PURE EV" label="PURE EV" />
+            <Picker.Item value="QJ Motor" label="QJ Motor" />
+            <Picker.Item value="SWM" label="SWM" />
+            <Picker.Item value="Tork" label="Tork" />
+            <Picker.Item value="Triumph" label="Triumph" />
+            <Picker.Item value="UM" label="UM" />
+            <Picker.Item value="Vespa" label="Vespa" />
+            <Picker.Item value="Victory" label="Victory" />
+            <Picker.Item value="Vida" label="Vida" />
+            <Picker.Item value="Zontes" label="Zontes" />
+            <Picker.Item value="Bajaj" label="Bajaj" />
+            <Picker.Item value="Hero" label="Hero" />
+            <Picker.Item value="Hero Honda" label="Hero Honda" />
+            <Picker.Item value="Honda" label="Honda" />
+            <Picker.Item value="Honda" label="Honda" />
+            <Picker.Item value="Royal Enfield" label="Royal Enfield" />
+            <Picker.Item value="Suzuki" label="Suzuki" />
+            <Picker.Item value="TVS" label="TVS" />
+            <Picker.Item value="Yamaha" label="Yamaha" />
+            <Picker.Item value="Other Brands" label="Other Brands" />
+          </Picker>
 
-        {/* Year Field */}
-        <Text style={styles.label}>Year *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter year"
-          value={formData.year}
-          onChangeText={(value) => handleChange('year', value)}
-        />
-        {/* Title Field */}
-        <Text style={styles.label}>KM Driven *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter KM driven"
-          value={formData.km_driven}
-          onChangeText={(value) => handleChange('km_driven', value)}
-        />
-        {/* Title Field */}
-        <Text style={styles.label}>Title *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Title"
-          value={formData.title}
-          onChangeText={(value) => handleChange('title', value)}
-        />
+          {/* Year Field */}
+          <Text style={styles.label}>Year *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter year"
+            value={formData.year}
+            onChangeText={(value) => handleChange('year', value)}
+          />
+          {/* Title Field */}
+          <Text style={styles.label}>KM Driven *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter KM driven"
+            value={formData.km_driven}
+            onChangeText={(value) => handleChange('km_driven', value)}
+          />
+          {/* Title Field */}
+          <Text style={styles.label}>Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Title"
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
+          />
 
-        {/* Description Field */}
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="Enter Description"
-          value={formData.description}
-          multiline
-          onChangeText={(value) => handleChange('description', value)}
-        />
+          {/* Description Field */}
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            placeholder="Enter Description"
+            value={formData.description}
+            multiline
+            onChangeText={(value) => handleChange('description', value)}
+          />
 
-        {/* Amount Field */}
-        <Text style={styles.label}>Amount *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Amount"
-          keyboardType="numeric"
-          value={formData.amount}
-          onChangeText={(value) => handleChange('amount', value)}
-        />
+          {/* Amount Field */}
+          <Text style={styles.label}>Amount *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Amount"
+            keyboardType="numeric"
+            value={formData.amount}
+            onChangeText={(value) => handleChange('amount', value)}
+          />
 
-        {/* Image Picker */}
-        <Text style={styles.label}>Select Images</Text>
-        <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-          <Text style={styles.imagePickerText}>Pick images</Text>
-        </TouchableOpacity>
+          {/* Image Picker */}
+          <Text style={styles.label}>Select Images</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+            <Text style={styles.imagePickerText}>Pick images</Text>
+          </TouchableOpacity>
 
-        {/* Display Selected Images */}
-        <View style={styles.imagesContainer}>
-          {formData.images.map((imageUri, index) => (
-            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-          ))}
+          {/* Display Selected Images */}
+          <View style={styles.imagesContainer}>
+            {formData.images.map((imageUri, index) => (
+              <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Fixed Submit Button */}
+        <View style={styles.stickyButton}>
+          <Button title="Submit" onPress={handleSubmit} />
         </View>
-      </ScrollView>
-
-      {/* Fixed Submit Button */}
-      <View style={styles.stickyButton}>
-        <Button title="Submit" onPress={handleSubmit} />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </AlertNotificationRoot>
   );
 };
 

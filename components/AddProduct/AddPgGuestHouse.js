@@ -89,7 +89,7 @@ const AddPgGuestHouse = ({ route }) => {
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
           title: 'Success',
-          textBody: 'Land & Plots details submitted successfully!',
+          textBody: 'Details submitted successfully!',
           button: 'close',
         });
       } else {
