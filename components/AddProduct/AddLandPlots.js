@@ -13,7 +13,7 @@ const AddLandPlots = ({ route }) => {
     length: '',
     breadth: '',
     projectName: '',
-    title: '',
+    adTitle: '',
     description: '',
     amount: '',
     facing: '',
@@ -83,7 +83,7 @@ const AddLandPlots = ({ route }) => {
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
           title: 'Success',
-          textBody: 'Houses & Apartments details submitted successfully!',
+          textBody: 'Land & Plots details submitted successfully!',
           button: 'close',
         });
       } else {
@@ -171,8 +171,8 @@ const AddLandPlots = ({ route }) => {
           <TextInput
             style={styles.input}
             placeholder="Enter Ad Title"
-            value={formData.title}
-            onChangeText={(value) => handleChange('title', value)}
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
           />
 
           {/* Description */}

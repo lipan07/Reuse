@@ -12,7 +12,7 @@ const AddShopOffices = ({ route }) => {
         superBuiltUpArea: '',
         carpetArea: '',
         maintenance: '',
-        washrooms: '',
+        washroom: '',
         projectName: '',
         adTitle: '',
         description: '',
@@ -187,8 +187,8 @@ const AddShopOffices = ({ route }) => {
                     style={styles.input}
                     placeholder="Enter Number of Washrooms"
                     keyboardType="numeric"
-                    value={formData.washrooms}
-                    onChangeText={(value) => handleChange('washrooms', value)}
+                    value={formData.washroom}
+                    onChangeText={(value) => handleChange('washroom', value)}
                 />
 
                 {/* Project Name */}
