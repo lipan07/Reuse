@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Picker } from '@react-native-picker/picker';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { BASE_URL, TOKEN } from '@env';
 
 const AddLandPlots = ({ route }) => {
   const { category, subcategory } = route.params;
   const [formData, setFormData] = useState({
     listedBy: '',
-    fuelType: '',
     plotArea: '',
     length: '',
     breadth: '',
     projectName: '',
-    title: '',
+    adTitle: '',
     description: '',
     amount: '',
     facing: '',
@@ -46,153 +48,193 @@ const AddLandPlots = ({ route }) => {
   const handleSubmit = async () => {
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
-      formDataToSend.append(key, formData[key]);
+      if (key === 'images') {
+        formData.images.forEach((imageUri, index) => {
+          formDataToSend.append('images[]', {
+            uri: imageUri,
+            type: 'image/jpeg',
+            name: `image_${index}.jpg`,
+          });
+        });
+      } else {
+        formDataToSend.append(key, formData[key]);
+      }
     });
 
+    formDataToSend.append('category_id', subcategory.id);
+    formDataToSend.append('guard_name', subcategory.guard_name);
+    formDataToSend.append('post_type', 'sell');
+    formDataToSend.append('address', 'India');
+    console.log(formDataToSend);
     try {
-      const response = await fetch('/api/land-plots', {
+      const response = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
         body: formDataToSend,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${TOKEN}`
+        },
       });
 
+      const responseData = await response.json();
+      console.log(responseData);
       if (response.ok) {
-        Alert.alert('Success', 'Land/Plot details submitted successfully!');
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Land & Plots details submitted successfully!',
+          button: 'close',
+        });
       } else {
-        console.error('Error submitting form:', response.statusText);
-        Alert.alert('Error', 'There was an issue submitting the form.');
+        Dialog.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'Validation Error',
+          textBody: responseData.message,
+          button: 'close',
+        });
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: 'Error',
+        textBody: 'There was an issue submitting the form.',
+        button: 'close',
+      });
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
-    >
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Listed By */}
-        <Text style={styles.label}>Listed By *</Text>
-        <View style={styles.optionContainer}>
-          {['Dealer', 'Owner', 'Builder'].map((listedByOption) => (
-            <TouchableOpacity
-              key={listedByOption}
-              style={[styles.optionButton, formData.listedBy === listedByOption && styles.selectedOption]}
-              onPress={() => handleChange('listedBy', listedByOption)}
+    <AlertNotificationRoot>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+          {/* Listed By */}
+          <Text style={styles.label}>Listed By *</Text>
+          <View style={styles.optionContainer}>
+            {['Dealer', 'Owner', 'Builder'].map((listedByOption) => (
+              <TouchableOpacity
+                key={listedByOption}
+                style={[styles.optionButton, formData.listedBy === listedByOption && styles.selectedOption]}
+                onPress={() => handleChange('listedBy', listedByOption)}
+              >
+                <Text style={formData.listedBy === listedByOption ? styles.selectedText : styles.optionText}>
+                  {listedByOption}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Plot Area */}
+          <Text style={styles.label}>Plot Area (ft²) *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Plot Area"
+            keyboardType="numeric"
+            value={formData.plotArea}
+            onChangeText={(value) => handleChange('plotArea', value)}
+          />
+
+          {/* Length */}
+          <Text style={styles.label}>Length (ft)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Length"
+            keyboardType="numeric"
+            value={formData.length}
+            onChangeText={(value) => handleChange('length', value)}
+          />
+
+          {/* Breadth */}
+          <Text style={styles.label}>Breadth (ft)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Breadth"
+            keyboardType="numeric"
+            value={formData.breadth}
+            onChangeText={(value) => handleChange('breadth', value)}
+          />
+
+          {/* Project Name */}
+          <Text style={styles.label}>Project Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Project Name"
+            value={formData.projectName}
+            onChangeText={(value) => handleChange('projectName', value)}
+          />
+
+          {/* Title */}
+          <Text style={styles.label}>Ad Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Ad Title"
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
+          />
+
+          {/* Description */}
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            placeholder="Enter Description"
+            value={formData.description}
+            multiline
+            onChangeText={(value) => handleChange('description', value)}
+          />
+
+          {/* Amount */}
+          <Text style={styles.label}>Amount *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Amount"
+            keyboardType="numeric"
+            value={formData.amount}
+            onChangeText={(value) => handleChange('amount', value)}
+          />
+
+          {/* Facing */}
+          <View style={styles.container}>
+            <Text style={styles.label}>Facing *</Text>
+            <Picker
+              selectedValue={formData.facing}
+              onValueChange={(value) => handleChange('facing', value)}
+              style={styles.picker}
             >
-              <Text style={formData.listedBy === listedByOption ? styles.selectedText : styles.optionText}>
-                {listedByOption}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              <Picker.Item label="Select facing" value="" />
+              <Picker.Item label="East" value="East" />
+              <Picker.Item label="North" value="North" />
+              <Picker.Item label="South" value="South" />
+              <Picker.Item label="West" value="West" />
+              <Picker.Item label="North-East" value="North-East" />
+              <Picker.Item label="North-West" value="North-West" />
+              <Picker.Item label="South-East" value="South-East" />
+              <Picker.Item label="South-West" value="South-West" />
+            </Picker>
+          </View>
+
+          {/* Image Picker */}
+          <Text style={styles.label}>Select Images</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+            <Text style={styles.imagePickerText}>Pick images</Text>
+          </TouchableOpacity>
+
+          {/* Display Selected Images */}
+          <View style={styles.imagesContainer}>
+            {formData.images.map((imageUri, index) => (
+              <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+            ))}
+          </View>
+
+        </ScrollView>
+        {/* Fixed Submit Button */}
+        <View style={styles.stickyButton}>
+          <Button title="Submit" onPress={handleSubmit} />
         </View>
-
-        {/* Fuel Type */}
-        <Text style={styles.label}>Fuel Type</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Fuel Type"
-          value={formData.fuelType}
-          onChangeText={(value) => handleChange('fuelType', value)}
-        />
-
-        {/* Plot Area */}
-        <Text style={styles.label}>Plot Area (ft²) *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Plot Area"
-          keyboardType="numeric"
-          value={formData.plotArea}
-          onChangeText={(value) => handleChange('plotArea', value)}
-        />
-
-        {/* Length */}
-        <Text style={styles.label}>Length (ft)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Length"
-          keyboardType="numeric"
-          value={formData.length}
-          onChangeText={(value) => handleChange('length', value)}
-        />
-
-        {/* Breadth */}
-        <Text style={styles.label}>Breadth (ft)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Breadth"
-          keyboardType="numeric"
-          value={formData.breadth}
-          onChangeText={(value) => handleChange('breadth', value)}
-        />
-
-        {/* Project Name */}
-        <Text style={styles.label}>Project Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Project Name"
-          value={formData.projectName}
-          onChangeText={(value) => handleChange('projectName', value)}
-        />
-
-        {/* Title */}
-        <Text style={styles.label}>Ad Title *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Ad Title"
-          value={formData.title}
-          onChangeText={(value) => handleChange('title', value)}
-        />
-
-        {/* Description */}
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="Enter Description"
-          value={formData.description}
-          multiline
-          onChangeText={(value) => handleChange('description', value)}
-        />
-
-        {/* Amount */}
-        <Text style={styles.label}>Amount *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Amount"
-          keyboardType="numeric"
-          value={formData.amount}
-          onChangeText={(value) => handleChange('amount', value)}
-        />
-
-        {/* Facing */}
-        <Text style={styles.label}>Facing *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Facing (East, North, etc.)"
-          value={formData.facing}
-          onChangeText={(value) => handleChange('facing', value)}
-        />
-
-        {/* Image Picker */}
-        <Text style={styles.label}>Select Images</Text>
-        <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-          <Text style={styles.imagePickerText}>Pick images</Text>
-        </TouchableOpacity>
-
-        {/* Display Selected Images */}
-        <View style={styles.imagesContainer}>
-          {formData.images.map((imageUri, index) => (
-            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-          ))}
-        </View>
-
-      </ScrollView>
-      {/* Fixed Submit Button */}
-      <View style={styles.stickyButton}>
-        <Button title="Submit" onPress={handleSubmit} />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </AlertNotificationRoot>
   );
 };
 

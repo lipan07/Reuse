@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-// import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import BottomNavBar from './BottomNavBar';
 const ProductDetails = ({ route }) => {
     const { product } = route.params;
@@ -47,7 +47,7 @@ const ProductDetails = ({ route }) => {
 
                 {/* Product location map */}
                 <View style={styles.mapContainer}>
-                    {/* <MapView
+                    <MapView
                         style={styles.map}
                         initialRegion={{
                             latitude: 22.5726,
@@ -60,7 +60,7 @@ const ProductDetails = ({ route }) => {
                             title={"Big-Brain HQ"}
                             description={"This is Big-Brain Head-Quarters"}
                         />
-                    </MapView> */}
+                    </MapView>
                 </View>
             </ScrollView>
 
@@ -117,20 +117,20 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'green',
     },
-    // mapContainer: {
-    //     height: 300,
-    //     margin: 20,
-    //     borderWidth: 1,
-    //     borderColor: '#ccc',
-    //     borderRadius: 10,
-    //     overflow: 'hidden',
-    // },
-    // map: {
-    //     ...StyleSheet.absoluteFillObject,
-    // },
-    // map: {
-    //     flex: 1,
-    // },
+    mapContainer: {
+        height: 300,
+        margin: 20,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    map: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    map: {
+        flex: 1,
+    },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',

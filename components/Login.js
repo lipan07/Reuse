@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { BASE_URL, TOKEN } from '@env';
 
 const Login = () => {
    const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -14,9 +16,7 @@ const Login = () => {
          const token = await AsyncStorage.getItem('authToken');
          if (token) {
             setIsLoggedIn(true);
-            // Fetch user data here and set it to `userData`
-            // For now, we will use dummy data
-            setUserData({ name: 'John Doe', email: 'johndoe@example.com' });
+            // Fetch user data or perform other actions with the token
          }
       };
       checkLoginStatus();
@@ -28,37 +28,76 @@ const Login = () => {
    };
 
    const handleOtpSubmit = async () => {
-      // Logic to verify OTP and log in the user
-      setIsLoggedIn(true);
-      // Optionally fetch and set user data after login
-      setUserData({ name: 'John Doe', email: 'johndoe@example.com' });
+      try {
+         // Make API request to verify OTP
+         const response = await fetch(`${BASE_URL}/login`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+               phoneNumber,
+               otp,
+            }),
+         });
+
+         const data = await response.json();
+
+         if (response.ok) {
+            // Save the auth_token to AsyncStorage
+            await AsyncStorage.setItem('authToken', data.auth_token);
+
+            // Update login state
+            setIsLoggedIn(true);
+
+            // Optionally fetch and set user data after login
+            // setUserData({ name: 'John Doe', email: 'johndoe@example.com' });
+         } else {
+            Dialog.show({
+               type: ALERT_TYPE.WARNING,
+               title: 'OTP Verification Failed!!',
+               textBody: 'Please try again.',
+               button: 'close',
+            });
+         }
+      } catch (error) {
+
+         Dialog.show({
+            type: ALERT_TYPE.WARNING,
+            title: 'Error!!',
+            textBody: 'Something went wrong. Please try again later.',
+            button: 'close',
+         });
+      }
    };
 
    return (
-      <View style={styles.container}>
-         <View style={styles.loginContainer}>
-            <Text style={styles.loginTitle}>Login</Text>
-            <TextInput
-               style={styles.input}
-               placeholder="Phone Number"
-               value={phoneNumber}
-               onChangeText={setPhoneNumber}
-               keyboardType="phone-pad"
-            />
-            {showOtpField && (
+      <AlertNotificationRoot>
+         <View style={styles.container}>
+            <View style={styles.loginContainer}>
+               <Text style={styles.loginTitle}>Login</Text>
                <TextInput
                   style={styles.input}
-                  placeholder="OTP"
-                  value={otp}
-                  onChangeText={setOtp}
-                  keyboardType="number-pad"
+                  placeholder="Phone Number"
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  keyboardType="phone-pad"
                />
-            )}
-            <TouchableOpacity style={styles.loginButton} onPress={showOtpField ? handleOtpSubmit : handlePhoneNumberSubmit}>
-               <Text style={styles.buttonText}>{showOtpField ? 'Submit OTP' : 'Send OTP'}</Text>
-            </TouchableOpacity>
+               {showOtpField && (
+                  <TextInput
+                     style={styles.input}
+                     placeholder="OTP"
+                     value={otp}
+                     onChangeText={setOtp}
+                     keyboardType="number-pad"
+                  />
+               )}
+               <TouchableOpacity style={styles.loginButton} onPress={showOtpField ? handleOtpSubmit : handlePhoneNumberSubmit}>
+                  <Text style={styles.buttonText}>{showOtpField ? 'Submit OTP' : 'Send OTP'}</Text>
+               </TouchableOpacity>
+            </View>
          </View>
-      </View>
+      </AlertNotificationRoot>
    );
 };
 

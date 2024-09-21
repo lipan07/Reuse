@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { BASE_URL, TOKEN } from '@env';
 
 const AddShopOffices = ({ route }) => {
     const { category, subcategory } = route.params;
@@ -12,7 +14,7 @@ const AddShopOffices = ({ route }) => {
         superBuiltUpArea: '',
         carpetArea: '',
         maintenance: '',
-        washrooms: '',
+        washroom: '',
         projectName: '',
         adTitle: '',
         description: '',
@@ -56,7 +58,7 @@ const AddShopOffices = ({ route }) => {
                     formDataToSend.append('images[]', {
                         uri: imageUri,
                         type: 'image/jpeg',
-                        name: `image${index}.jpg`,
+                        name: `image_${index}.jpg`,
                     });
                 });
             } else {
@@ -64,188 +66,216 @@ const AddShopOffices = ({ route }) => {
             }
         });
 
+        formDataToSend.append('category_id', subcategory.id);
+        formDataToSend.append('guard_name', subcategory.guard_name);
+        formDataToSend.append('post_type', 'sell');
+        formDataToSend.append('address', 'India');
+        console.log(formDataToSend);
         try {
-            const response = await fetch('/api/shop-offices', {
+            const response = await fetch(`${BASE_URL}/posts`, {
                 method: 'POST',
                 body: formDataToSend,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${TOKEN}`
+                },
             });
 
+            const responseData = await response.json();
+            console.log(responseData);
             if (response.ok) {
-                Alert.alert('Success', 'Shop/Office details submitted successfully!');
+                Dialog.show({
+                    type: ALERT_TYPE.SUCCESS,
+                    title: 'Success',
+                    textBody: 'Details submitted successfully!',
+                    button: 'close',
+                });
             } else {
-                console.error('Error submitting form:', response.statusText);
-                Alert.alert('Error', 'There was an issue submitting the form.');
+                Dialog.show({
+                    type: ALERT_TYPE.WARNING,
+                    title: 'Validation Error',
+                    textBody: responseData.message,
+                    button: 'close',
+                });
             }
         } catch (error) {
-            console.error('Error submitting form:', error);
+            Dialog.show({
+                type: ALERT_TYPE.WARNING,
+                title: 'Error',
+                textBody: 'There was an issue submitting the form.',
+                button: 'close',
+            });
         }
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
-        >
-            <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-                {/* Furnishing */}
-                <Text style={styles.label}>Furnishing *</Text>
-                <View style={styles.optionContainer}>
-                    {['Furnished', 'Semi-Furnished', 'Unfurnished'].map((option) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={[styles.optionButton, formData.furnishing === option && styles.selectedOption]}
-                            onPress={() => handleOptionSelection('furnishing', option)}
-                        >
-                            <Text style={formData.furnishing === option ? styles.selectedText : styles.optionText}>
-                                {option}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+        <AlertNotificationRoot>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+            >
+                <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+                    {/* Furnishing */}
+                    <Text style={styles.label}>Furnishing *</Text>
+                    <View style={styles.optionContainer}>
+                        {['Furnished', 'Semi-Furnished', 'Unfurnished'].map((option) => (
+                            <TouchableOpacity
+                                key={option}
+                                style={[styles.optionButton, formData.furnishing === option && styles.selectedOption]}
+                                onPress={() => handleOptionSelection('furnishing', option)}
+                            >
+                                <Text style={formData.furnishing === option ? styles.selectedText : styles.optionText}>
+                                    {option}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Construction Status */}
+                    <Text style={styles.label}>Construction Status *</Text>
+                    <View style={styles.optionContainer}>
+                        {['New Launch', 'Under Construction', 'Ready to Move'].map((option) => (
+                            <TouchableOpacity
+                                key={option}
+                                style={[styles.optionButton, formData.constructionStatus === option && styles.selectedOption]}
+                                onPress={() => handleOptionSelection('constructionStatus', option)}
+                            >
+                                <Text style={formData.constructionStatus === option ? styles.selectedText : styles.optionText}>
+                                    {option}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Listed By */}
+                    <Text style={styles.label}>Listed By *</Text>
+                    <View style={styles.optionContainer}>
+                        {['Builder', 'Dealer', 'Owner'].map((option) => (
+                            <TouchableOpacity
+                                key={option}
+                                style={[styles.optionButton, formData.listedBy === option && styles.selectedOption]}
+                                onPress={() => handleOptionSelection('listedBy', option)}
+                            >
+                                <Text style={formData.listedBy === option ? styles.selectedText : styles.optionText}>
+                                    {option}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Car Parking */}
+                    <Text style={styles.label}>Car Parking *</Text>
+                    <View style={styles.optionContainer}>
+                        {['1', '2', '3', '3+'].map((option) => (
+                            <TouchableOpacity
+                                key={option}
+                                style={[styles.optionButton, formData.carParking === option && styles.selectedOption]}
+                                onPress={() => handleOptionSelection('carParking', option)}
+                            >
+                                <Text style={formData.carParking === option ? styles.selectedText : styles.optionText}>
+                                    {option}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Super Built-up Area */}
+                    <Text style={styles.label}>Super Built-up Area (ft²) *</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Super Built-up Area"
+                        keyboardType="numeric"
+                        value={formData.superBuiltUpArea}
+                        onChangeText={(value) => handleChange('superBuiltUpArea', value)}
+                    />
+
+                    {/* Carpet Area */}
+                    <Text style={styles.label}>Carpet Area (ft²) *</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Carpet Area"
+                        keyboardType="numeric"
+                        value={formData.carpetArea}
+                        onChangeText={(value) => handleChange('carpetArea', value)}
+                    />
+
+                    {/* Maintenance */}
+                    <Text style={styles.label}>Maintenance (Monthly)</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Maintenance"
+                        keyboardType="numeric"
+                        value={formData.maintenance}
+                        onChangeText={(value) => handleChange('maintenance', value)}
+                    />
+
+                    {/* Washrooms */}
+                    <Text style={styles.label}>Washrooms</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Number of Washrooms"
+                        keyboardType="numeric"
+                        value={formData.washroom}
+                        onChangeText={(value) => handleChange('washroom', value)}
+                    />
+
+                    {/* Project Name */}
+                    <Text style={styles.label}>Project Name</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Project Name"
+                        value={formData.projectName}
+                        onChangeText={(value) => handleChange('projectName', value)}
+                    />
+
+                    {/* Ad Title */}
+                    <Text style={styles.label}>Ad Title *</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Ad Title"
+                        value={formData.adTitle}
+                        onChangeText={(value) => handleChange('adTitle', value)}
+                    />
+
+                    {/* Description */}
+                    <Text style={styles.label}>Description *</Text>
+                    <TextInput
+                        style={[styles.input, { height: 100 }]}
+                        placeholder="Enter Description"
+                        value={formData.description}
+                        multiline
+                        onChangeText={(value) => handleChange('description', value)}
+                    />
+
+                    {/* Amount */}
+                    <Text style={styles.label}>Amount *</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Amount"
+                        keyboardType="numeric"
+                        value={formData.amount}
+                        onChangeText={(value) => handleChange('amount', value)}
+                    />
+
+                    {/* Image Picker */}
+                    <Text style={styles.label}>Select Images</Text>
+                    <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+                        <Text style={styles.imagePickerText}>Pick images</Text>
+                    </TouchableOpacity>
+                    <View style={styles.imageContainer}>
+                        {formData.images.map((imageUri, index) => (
+                            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+                        ))}
+                    </View>
+                </ScrollView>
+
+                {/* Sticky Submit Button */}
+                <View style={styles.stickyButton}>
+                    <Button title="Submit" onPress={handleSubmit} />
                 </View>
-
-                {/* Construction Status */}
-                <Text style={styles.label}>Construction Status *</Text>
-                <View style={styles.optionContainer}>
-                    {['New Launch', 'Under Construction', 'Ready to Move'].map((option) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={[styles.optionButton, formData.constructionStatus === option && styles.selectedOption]}
-                            onPress={() => handleOptionSelection('constructionStatus', option)}
-                        >
-                            <Text style={formData.constructionStatus === option ? styles.selectedText : styles.optionText}>
-                                {option}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {/* Listed By */}
-                <Text style={styles.label}>Listed By *</Text>
-                <View style={styles.optionContainer}>
-                    {['Builder', 'Dealer', 'Owner'].map((option) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={[styles.optionButton, formData.listedBy === option && styles.selectedOption]}
-                            onPress={() => handleOptionSelection('listedBy', option)}
-                        >
-                            <Text style={formData.listedBy === option ? styles.selectedText : styles.optionText}>
-                                {option}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {/* Car Parking */}
-                <Text style={styles.label}>Car Parking *</Text>
-                <View style={styles.optionContainer}>
-                    {['1', '2', '3', '3+'].map((option) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={[styles.optionButton, formData.carParking === option && styles.selectedOption]}
-                            onPress={() => handleOptionSelection('carParking', option)}
-                        >
-                            <Text style={formData.carParking === option ? styles.selectedText : styles.optionText}>
-                                {option}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {/* Super Built-up Area */}
-                <Text style={styles.label}>Super Built-up Area (ft²) *</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Super Built-up Area"
-                    keyboardType="numeric"
-                    value={formData.superBuiltUpArea}
-                    onChangeText={(value) => handleChange('superBuiltUpArea', value)}
-                />
-
-                {/* Carpet Area */}
-                <Text style={styles.label}>Carpet Area (ft²) *</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Carpet Area"
-                    keyboardType="numeric"
-                    value={formData.carpetArea}
-                    onChangeText={(value) => handleChange('carpetArea', value)}
-                />
-
-                {/* Maintenance */}
-                <Text style={styles.label}>Maintenance (Monthly)</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Maintenance"
-                    keyboardType="numeric"
-                    value={formData.maintenance}
-                    onChangeText={(value) => handleChange('maintenance', value)}
-                />
-
-                {/* Washrooms */}
-                <Text style={styles.label}>Washrooms</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Number of Washrooms"
-                    keyboardType="numeric"
-                    value={formData.washrooms}
-                    onChangeText={(value) => handleChange('washrooms', value)}
-                />
-
-                {/* Project Name */}
-                <Text style={styles.label}>Project Name</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Project Name"
-                    value={formData.projectName}
-                    onChangeText={(value) => handleChange('projectName', value)}
-                />
-
-                {/* Ad Title */}
-                <Text style={styles.label}>Ad Title *</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Ad Title"
-                    value={formData.adTitle}
-                    onChangeText={(value) => handleChange('adTitle', value)}
-                />
-
-                {/* Description */}
-                <Text style={styles.label}>Description *</Text>
-                <TextInput
-                    style={[styles.input, { height: 100 }]}
-                    placeholder="Enter Description"
-                    value={formData.description}
-                    multiline
-                    onChangeText={(value) => handleChange('description', value)}
-                />
-
-                {/* Amount */}
-                <Text style={styles.label}>Amount *</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter Amount"
-                    keyboardType="numeric"
-                    value={formData.amount}
-                    onChangeText={(value) => handleChange('amount', value)}
-                />
-
-                {/* Image Picker */}
-                <Text style={styles.label}>Select Images</Text>
-                <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-                    <Text style={styles.imagePickerText}>Pick images</Text>
-                </TouchableOpacity>
-                <View style={styles.imageContainer}>
-                    {formData.images.map((imageUri, index) => (
-                        <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-                    ))}
-                </View>
-            </ScrollView>
-
-            {/* Sticky Submit Button */}
-            <View style={styles.stickyButton}>
-                <Button title="Submit" onPress={handleSubmit} />
-            </View>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </AlertNotificationRoot>
     );
 };
 

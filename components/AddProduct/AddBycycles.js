@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { BASE_URL, TOKEN } from '@env';
 
 const AddBycycles = ({ route }) => {
   const { category, subcategory } = route.params;
   const [formData, setFormData] = useState({
     brand: '',
-    title: '',
+    adTitle: '',
     description: '',
     amount: '',
     images: [],
@@ -39,111 +41,149 @@ const AddBycycles = ({ route }) => {
   const handleSubmit = async () => {
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
-      formDataToSend.append(key, formData[key]);
+      if (key === 'images') {
+        formData.images.forEach((imageUri, index) => {
+          formDataToSend.append('images[]', {
+            uri: imageUri,
+            type: 'image/jpeg',
+            name: `image_${index}.jpg`,
+          });
+        });
+      } else {
+        formDataToSend.append(key, formData[key]);
+      }
     });
 
+    formDataToSend.append('category_id', subcategory.id);
+    formDataToSend.append('guard_name', subcategory.guard_name);
+    formDataToSend.append('post_type', 'sell');
+    formDataToSend.append('address', 'India');
+    console.log(formDataToSend);
     try {
-      const response = await fetch('/api/mobile-tablets', {
+      const response = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
         body: formDataToSend,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${TOKEN}`
+        },
       });
 
+      const responseData = await response.json();
+      console.log(responseData);
       if (response.ok) {
-        Alert.alert('Success', 'Mobile/Tablet details submitted successfully!');
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Details submitted successfully!',
+          button: 'close',
+        });
       } else {
-        console.error('Error submitting form:', response.statusText);
-        Alert.alert('Error', 'There was an issue submitting the form.');
+        Dialog.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'Validation Error',
+          textBody: responseData.message,
+          button: 'close',
+        });
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: 'Error',
+        textBody: 'There was an issue submitting the form.',
+        button: 'close',
+      });
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.formHeader}>Add Bycles</Text>
+    <AlertNotificationRoot>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <Text style={styles.formHeader}>Add Bycles</Text>
 
-        {/* Brand Selection */}
-        <Text style={styles.label}>Brand *</Text>
-        <Picker
-          selectedValue={formData.brand}
-          onValueChange={(value) => handleChange('brand', value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Select Brand" value="" />
-          <Picker.Item value="hercules" label="Hercules" />
-          <Picker.Item value="hero" label="Hero" />
-          <Picker.Item value="adrenix" label="Adrenix" />
-          <Picker.Item value="atlas" label="Atlas" />
-          <Picker.Item value="bsa" label="BSA" />
-          <Picker.Item value="btwin" label="BTwin" />
-          <Picker.Item value="firefox" label="Firefox" />
-          <Picker.Item value="g-sports" label="G Sports" />
-          <Picker.Item value="giant" label="Giant" />
-          <Picker.Item value="hrx" label="HRX" />
-          <Picker.Item value="keysto" label="Keysto" />
-          <Picker.Item value="leader" label="Leader" />
-          <Picker.Item value="montra" label="Montra" />
-          <Picker.Item value="ninety-one" label="Ninety one" />
-          <Picker.Item value="scott" label="Scott" />
-          <Picker.Item value="trek" label="Trek" />
-          <Picker.Item value="triban" label="Triban" />
-          <Picker.Item value="vector-91" label="Vector 91" />
-          <Picker.Item value="bicycles-other" label="Other Brands" />
-        </Picker>
+          {/* Brand Selection */}
+          <Text style={styles.label}>Brand *</Text>
+          <Picker
+            selectedValue={formData.brand}
+            onValueChange={(value) => handleChange('brand', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Brand" value="" />
+            <Picker.Item value="Hercules" label="Hercules" />
+            <Picker.Item value="Hero" label="Hero" />
+            <Picker.Item value="Adrenix" label="Adrenix" />
+            <Picker.Item value="Atlas" label="Atlas" />
+            <Picker.Item value="BSA" label="BSA" />
+            <Picker.Item value="BTwin" label="BTwin" />
+            <Picker.Item value="Firefox" label="Firefox" />
+            <Picker.Item value="G Sports" label="G Sports" />
+            <Picker.Item value="Giant" label="Giant" />
+            <Picker.Item value="HRX" label="HRX" />
+            <Picker.Item value="Keysto" label="Keysto" />
+            <Picker.Item value="Leader" label="Leader" />
+            <Picker.Item value="Montra" label="Montra" />
+            <Picker.Item value="Ninety one" label="Ninety one" />
+            <Picker.Item value="Scott" label="Scott" />
+            <Picker.Item value="Trek" label="Trek" />
+            <Picker.Item value="Triban" label="Triban" />
+            <Picker.Item value="Vector 91" label="Vector 91" />
+            <Picker.Item value="Other Brands" label="Other Brands" />
+          </Picker>
 
-        {/* Title Field */}
-        <Text style={styles.label}>Title *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Title"
-          value={formData.title}
-          onChangeText={(value) => handleChange('title', value)}
-        />
+          {/* Title Field */}
+          <Text style={styles.label}>Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Title"
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
+          />
 
-        {/* Description Field */}
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="Enter Description"
-          value={formData.description}
-          multiline
-          onChangeText={(value) => handleChange('description', value)}
-        />
+          {/* Description Field */}
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            placeholder="Enter Description"
+            value={formData.description}
+            multiline
+            onChangeText={(value) => handleChange('description', value)}
+          />
 
-        {/* Amount Field */}
-        <Text style={styles.label}>Amount *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Amount"
-          keyboardType="numeric"
-          value={formData.amount}
-          onChangeText={(value) => handleChange('amount', value)}
-        />
+          {/* Amount Field */}
+          <Text style={styles.label}>Amount *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Amount"
+            keyboardType="numeric"
+            value={formData.amount}
+            onChangeText={(value) => handleChange('amount', value)}
+          />
 
-        {/* Image Picker */}
-        <Text style={styles.label}>Select Images</Text>
-        <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-          <Text style={styles.imagePickerText}>Pick images</Text>
-        </TouchableOpacity>
+          {/* Image Picker */}
+          <Text style={styles.label}>Select Images</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+            <Text style={styles.imagePickerText}>Pick images</Text>
+          </TouchableOpacity>
 
-        {/* Display Selected Images */}
-        <View style={styles.imagesContainer}>
-          {formData.images.map((imageUri, index) => (
-            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-          ))}
+          {/* Display Selected Images */}
+          <View style={styles.imagesContainer}>
+            {formData.images.map((imageUri, index) => (
+              <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Fixed Submit Button */}
+        <View style={styles.stickyButton}>
+          <Button title="Submit" onPress={handleSubmit} />
         </View>
-      </ScrollView>
-
-      {/* Fixed Submit Button */}
-      <View style={styles.stickyButton}>
-        <Button title="Submit" onPress={handleSubmit} />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </AlertNotificationRoot>
   );
 };
 

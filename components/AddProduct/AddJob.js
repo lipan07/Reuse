@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Picker } from '@react-native-picker/picker';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { BASE_URL, TOKEN } from '@env';
 
 const AddJob = ({ route }) => {
   const { category, subcategory } = route.params;
@@ -9,7 +12,7 @@ const AddJob = ({ route }) => {
     positionType: '',
     salaryFrom: '',
     salaryTo: '',
-    title: '',
+    adTitle: '',
     description: '',
     images: [],
   });
@@ -47,120 +50,159 @@ const AddJob = ({ route }) => {
   const handleSubmit = async () => {
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
-      formDataToSend.append(key, formData[key]);
+      if (key === 'images') {
+        formData.images.forEach((imageUri, index) => {
+          formDataToSend.append('images[]', {
+            uri: imageUri,
+            type: 'image/jpeg',
+            name: `image_${index}.jpg`,
+          });
+        });
+      } else {
+        formDataToSend.append(key, formData[key]);
+      }
     });
 
+    formDataToSend.append('category_id', subcategory.id);
+    formDataToSend.append('guard_name', subcategory.guard_name);
+    formDataToSend.append('post_type', 'sell');
+    formDataToSend.append('address', 'India');
+
+    console.log(formDataToSend);
     try {
-      const response = await fetch('/api/job', {
+      const response = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
         body: formDataToSend,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${TOKEN}`
+        },
       });
 
+      const responseData = await response.json();
+      console.log(responseData);
       if (response.ok) {
-        Alert.alert('Success', 'Job details submitted successfully!');
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Job details submitted successfully!',
+          button: 'close',
+        });
       } else {
-        console.error('Error submitting form:', response.statusText);
-        Alert.alert('Error', 'There was an issue submitting the form.');
+        Dialog.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'Validation Error',
+          textBody: responseData.message,
+          button: 'close',
+        });
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: 'Error',
+        textBody: 'There was an issue submitting the form.',
+        button: 'close',
+      });
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.formHeader}>Add Job</Text>
+    <AlertNotificationRoot>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <Text style={styles.formHeader}>Add Job</Text>
 
-        {/* Salary Period Selection */}
-        <Text style={styles.label}>Salary Period *</Text>
-        <View style={styles.optionContainer}>
-          {['Daily', 'Weekly', 'Monthly', 'Yearly'].map((period) => (
-            <TouchableOpacity
-              key={period}
-              style={[styles.optionButton, formData.salaryPeriod === period && styles.selectedOption]}
-              onPress={() => handleSelection('salaryPeriod', period)}
-            >
-              <Text style={formData.salaryPeriod === period ? styles.selectedText : styles.optionText}>{period}</Text>
-            </TouchableOpacity>
-          ))}
+          {/* Salary Period Selection */}
+          <Text style={styles.label}>Salary Period *</Text>
+          <View style={styles.optionContainer}>
+            {['Hourly', 'Daily', 'Weekly', 'Monthly', 'Yearly'].map((period) => (
+              <TouchableOpacity
+                key={period}
+                style={[styles.optionButton, formData.salaryPeriod === period && styles.selectedOption]}
+                onPress={() => handleSelection('salaryPeriod', period)}
+              >
+                <Text style={formData.salaryPeriod === period ? styles.selectedText : styles.optionText}>{period}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Position Type Selection */}
+          <Text style={styles.label}>Position Type *</Text>
+          <View style={styles.optionContainer}>
+            {['Contract', 'Full-time', 'Part-time', 'Temporary'].map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[styles.optionButton, formData.positionType === type && styles.selectedOption]}
+                onPress={() => handleSelection('positionType', type)}
+              >
+                <Text style={formData.positionType === type ? styles.selectedText : styles.optionText}>{type}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Salary From Field */}
+          <Text style={styles.label}>Salary From *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Salary From"
+            keyboardType="numeric"
+            value={formData.salaryFrom}
+            onChangeText={(value) => handleChange('salaryFrom', value)}
+          />
+
+          {/* Salary To Field */}
+          <Text style={styles.label}>Salary To *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Salary To"
+            keyboardType="numeric"
+            value={formData.salaryTo}
+            onChangeText={(value) => handleChange('salaryTo', value)}
+          />
+
+          {/* Title Field */}
+          <Text style={styles.label}>Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Title"
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
+          />
+
+          {/* Description Field */}
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            placeholder="Enter Description"
+            value={formData.description}
+            multiline
+            onChangeText={(value) => handleChange('description', value)}
+          />
+
+          {/* Image Picker */}
+          <Text style={styles.label}>Select Images</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+            <Text style={styles.imagePickerText}>Pick images</Text>
+          </TouchableOpacity>
+
+          {/* Display Selected Images */}
+          <View style={styles.imagesContainer}>
+            {formData.images.map((imageUri, index) => (
+              <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Fixed Submit Button */}
+        <View style={styles.stickyButton}>
+          <Button title="Submit" onPress={handleSubmit} />
         </View>
-
-        {/* Position Type Selection */}
-        <Text style={styles.label}>Position Type *</Text>
-        <View style={styles.optionContainer}>
-          {['Contract', 'Full-time', 'Part-time', 'Temporary'].map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[styles.optionButton, formData.positionType === type && styles.selectedOption]}
-              onPress={() => handleSelection('positionType', type)}
-            >
-              <Text style={formData.positionType === type ? styles.selectedText : styles.optionText}>{type}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Salary From Field */}
-        <Text style={styles.label}>Salary From *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Salary From"
-          keyboardType="numeric"
-          value={formData.salaryFrom}
-          onChangeText={(value) => handleChange('salaryFrom', value)}
-        />
-
-        {/* Salary To Field */}
-        <Text style={styles.label}>Salary To *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Salary To"
-          keyboardType="numeric"
-          value={formData.salaryTo}
-          onChangeText={(value) => handleChange('salaryTo', value)}
-        />
-
-        {/* Title Field */}
-        <Text style={styles.label}>Title *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Title"
-          value={formData.title}
-          onChangeText={(value) => handleChange('title', value)}
-        />
-
-        {/* Description Field */}
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="Enter Description"
-          value={formData.description}
-          multiline
-          onChangeText={(value) => handleChange('description', value)}
-        />
-
-        {/* Image Picker */}
-        <Text style={styles.label}>Select Images</Text>
-        <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-          <Text style={styles.imagePickerText}>Pick images</Text>
-        </TouchableOpacity>
-
-        {/* Display Selected Images */}
-        <View style={styles.imagesContainer}>
-          {formData.images.map((imageUri, index) => (
-            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* Fixed Submit Button */}
-      <View style={styles.stickyButton}>
-        <Button title="Submit" onPress={handleSubmit} />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </AlertNotificationRoot>
   );
 };
 
