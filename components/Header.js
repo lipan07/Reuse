@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, Platform, StatusBar, TouchableOpacity, Modal, FlatList, TextInput } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons'; // Import icons
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Header = () => {
    const navigation = useNavigation();
@@ -13,6 +14,18 @@ const Header = () => {
       { id: '2', name: 'Kolkata- Sodepur' },
       { id: '3', name: 'Kolkata- Barrackpore' },
    ]);
+
+
+   const handleNavigation = async () => {
+      try {
+         await AsyncStorage.removeItem('authToken');
+         navigation.navigate('Login')
+         console.log('Logged out successfully');
+         // Optionally, navigate to the login screen or perform other actions
+      } catch (error) {
+         console.error('Error logging out:', error);
+      }
+   }
 
    return (
       <>
@@ -33,11 +46,11 @@ const Header = () => {
                </TouchableOpacity>
 
                {/* User Icon */}
-               <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                  <Ionicons name="person-outline" size={24} color="#fff" style={styles.icon} />
+               <TouchableOpacity onPress={() => handleNavigation()} >
+                  <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.icon} />
                </TouchableOpacity>
             </View>
-         </View>
+         </View >
 
          <Modal visible={showAddressModal} transparent={true} animationType="slide">
             <View style={styles.modalContainer}>

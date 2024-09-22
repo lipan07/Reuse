@@ -1,20 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import Home from './Home'; // Import your Home component
-import ProductDetails from './ProductDetailsPage'; // Import your ProductDetails component
-import ProductAddPage from './ProductAddPage'; // Import your ProductDetails component
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Import all necessary components
+import Home from './Home';
+import ProductDetails from './ProductDetailsPage';
+import FullScreenMap from './FullScreenMap';
+import ImageViewer from './ImageViewer';
 import ChatBox from './ChatBox';
 import ChatList from './ChatList';
 import MyAdsPage from './MyAdsPage';
-import AccountPage from './AccountPage';
 import Profile from './Profile';
 import Login from './Login';
 import EditProfilePage from './EditProfilePage';
+import AccountPage from './AccountPage';
 import MyNetwork from './MyNetwork';
 import PackagePage from './PackagePage';
 import Settings from './Settings';
-import ImageViewer from './ImageViewer';
 import CompanyDetailsPage from './CompanyDetailsPage';
+import ProductAddPage from './ProductAddPage';
 import ProductForm from './ProductForm';
 import AddCarForm from './AddProduct/AddCarForm';
 import AddHousesApartments from './AddProduct/AddHousesApartments';
@@ -38,59 +42,67 @@ import AddVehicleSpareParts from './AddProduct/AddVehicleSpareParts';
 import AddCommercialHeavyVehicle from './AddProduct/AddCommercialHeavyVehicle';
 import AddCommercialHeavyMachinery from './AddProduct/AddCommercialHeavyMachinery';
 
+// Create Stack Navigators
 const Stack = createStackNavigator();
 
+// Main App Stack
 const AppNavigator = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('authToken');
+      setIsLoggedIn(!!token); // If token exists, user is logged in
+    };
+    checkLoginStatus();
+  }, []);
+
+  const initialRouteName = isLoggedIn ? "Home" : "Login";
+
   return (
-    <Stack.Navigator initialRouteName="Home">
-      <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
-      <Stack.Screen name="ProductDetails" options={{ headerShown: false }} component={ProductDetails} />
-      <Stack.Screen name="ImageViewer" options={{ headerShown: false }} component={ImageViewer} />
-      <Stack.Screen name="ChatBox" options={{ headerShown: false }} component={ChatBox} />
-      <Stack.Screen name="ChatList" options={{ headerShown: false }} component={ChatList} />
-      <Stack.Screen name="MyAdsPage" options={{ headerShown: false }} component={MyAdsPage} />
-      <Stack.Screen name="Profile" options={{ headerShown: false }} component={Profile} />
-      <Stack.Screen name="Login" options={{ headerShown: false }} component={Login} />
-      <Stack.Screen name="EditProfilePage" options={{ headerShown: false }} component={EditProfilePage} />
-      <Stack.Screen name="AccountPage" options={{ headerShown: false }} component={AccountPage} />
-      <Stack.Screen name="MyNetwork" options={{ headerShown: false }} component={MyNetwork} />
-      <Stack.Screen name="PackagePage" options={{ headerShown: false }} component={PackagePage} />
-      <Stack.Screen name="Settings" options={{ headerShown: false }} component={Settings} />
-      <Stack.Screen name="CompanyDetailsPage" options={{ headerShown: false }} component={CompanyDetailsPage} />
-
+    <Stack.Navigator initialRouteName="{initialRouteName}" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="Home" component={Home} />
+      <Stack.Screen name="ProductDetails" component={ProductDetails} />
+      <Stack.Screen name="FullScreenMap" component={FullScreenMap} />
+      <Stack.Screen name="ImageViewer" component={ImageViewer} />
+      <Stack.Screen name="ChatBox" component={ChatBox} />
+      <Stack.Screen name="ChatList" component={ChatList} />
+      <Stack.Screen name="MyAdsPage" component={MyAdsPage} />
+      <Stack.Screen name="Profile" component={Profile} />
+      <Stack.Screen name="EditProfilePage" component={EditProfilePage} />
+      <Stack.Screen name="AccountPage" component={AccountPage} />
+      <Stack.Screen name="MyNetwork" component={MyNetwork} />
+      <Stack.Screen name="PackagePage" component={PackagePage} />
+      <Stack.Screen name="Settings" component={Settings} />
+      <Stack.Screen name="CompanyDetailsPage" component={CompanyDetailsPage} />
       {/* Add product section */}
-      <Stack.Screen name="ProductAddPage" options={{ headerShown: false }} component={ProductAddPage} />
-      <Stack.Screen name="ProductForm" options={{ headerShown: false }} component={ProductForm} />
-      <Stack.Screen name="AddCarForm" options={{ headerShown: false }} component={AddCarForm} />
-      <Stack.Screen name="AddHousesApartments" options={{ headerShown: false }} component={AddHousesApartments} />
-      <Stack.Screen name="AddLandPlots" options={{ headerShown: false }} component={AddLandPlots} />
-      <Stack.Screen name="AddPgGuestHouse" options={{ headerShown: false }} component={AddPgGuestHouse} />
-      <Stack.Screen name="AddShopOffices" options={{ headerShown: false }} component={AddShopOffices} />
-      <Stack.Screen name="AddMobileTablets" options={{ headerShown: false }} component={AddMobileTablets} />
-      <Stack.Screen name="AddJob" options={{ headerShown: false }} component={AddJob} />
-      <Stack.Screen name="AddMotorcycles" options={{ headerShown: false }} component={AddMotorcycles} />
-      <Stack.Screen name="AddScooters" options={{ headerShown: false }} component={AddScooters} />
-      <Stack.Screen name="AddBycycles" options={{ headerShown: false }} component={AddBycycles} />
-
-      {/* Others : Start */}
-      <Stack.Screen name="AddOthers" options={{ headerShown: false }} component={AddOthers} />
-      {/* Others : End */}
-
-
-      <Stack.Screen name="AddEducationClasses" options={{ headerShown: false }} component={AddEducationClasses} />
-      <Stack.Screen name="AddToursTravels" options={{ headerShown: false }} component={AddToursTravels} />
-      <Stack.Screen name="AddElectronicsRepairServices" options={{ headerShown: false }} component={AddElectronicsRepairServices} />
-      <Stack.Screen name="AddHealthBeauty" options={{ headerShown: false }} component={AddHealthBeauty} />
-      <Stack.Screen name="AddHomeRenovationRepair" options={{ headerShown: false }} component={AddHomeRenovationRepair} />
-      <Stack.Screen name="AddCleaningPestControl" options={{ headerShown: false }} component={AddCleaningPestControl} />
-      <Stack.Screen name="AddLegalDocumentationServices" options={{ headerShown: false }} component={AddLegalDocumentationServices} />
-      <Stack.Screen name="AddVehicleSpareParts" options={{ headerShown: false }} component={AddVehicleSpareParts} />
-      <Stack.Screen name="AddCommercialHeavyVehicle" options={{ headerShown: false }} component={AddCommercialHeavyVehicle} />
-      <Stack.Screen name="AddCommercialHeavyMachinery" options={{ headerShown: false }} component={AddCommercialHeavyMachinery} />
-
-
+      <Stack.Screen name="ProductAddPage" component={ProductAddPage} />
+      <Stack.Screen name="ProductForm" component={ProductForm} />
+      <Stack.Screen name="AddCarForm" component={AddCarForm} />
+      <Stack.Screen name="AddHousesApartments" component={AddHousesApartments} />
+      <Stack.Screen name="AddLandPlots" component={AddLandPlots} />
+      <Stack.Screen name="AddPgGuestHouse" component={AddPgGuestHouse} />
+      <Stack.Screen name="AddShopOffices" component={AddShopOffices} />
+      <Stack.Screen name="AddMobileTablets" component={AddMobileTablets} />
+      <Stack.Screen name="AddJob" component={AddJob} />
+      <Stack.Screen name="AddMotorcycles" component={AddMotorcycles} />
+      <Stack.Screen name="AddScooters" component={AddScooters} />
+      <Stack.Screen name="AddBycycles" component={AddBycycles} />
+      <Stack.Screen name="AddOthers" component={AddOthers} />
+      <Stack.Screen name="AddEducationClasses" component={AddEducationClasses} />
+      <Stack.Screen name="AddToursTravels" component={AddToursTravels} />
+      <Stack.Screen name="AddElectronicsRepairServices" component={AddElectronicsRepairServices} />
+      <Stack.Screen name="AddHealthBeauty" component={AddHealthBeauty} />
+      <Stack.Screen name="AddHomeRenovationRepair" component={AddHomeRenovationRepair} />
+      <Stack.Screen name="AddCleaningPestControl" component={AddCleaningPestControl} />
+      <Stack.Screen name="AddLegalDocumentationServices" component={AddLegalDocumentationServices} />
+      <Stack.Screen name="AddVehicleSpareParts" component={AddVehicleSpareParts} />
+      <Stack.Screen name="AddCommercialHeavyVehicle" component={AddCommercialHeavyVehicle} />
+      <Stack.Screen name="AddCommercialHeavyMachinery" component={AddCommercialHeavyMachinery} />
     </Stack.Navigator>
   );
 };
+
 
 export default AppNavigator;

@@ -4,9 +4,11 @@ import Swiper from 'react-native-swiper';
 import CategoryMenu from './CategoryMenu';
 import BottomNavBar from './BottomNavBar';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL, TOKEN } from '@env';
 
 const Home = ({ navigation }) => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +70,18 @@ const Home = ({ navigation }) => {
     return () => {
       subscription.remove(); // Clean up the event listener when the component unmounts
     };
+  }, []);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        setIsLoggedIn(false);
+        // Fetch user data or perform other actions with the token
+        navigation.navigate('Login');
+      }
+    };
+    checkLoginStatus();
   }, []);
 
   // Handle scrolling to the end of the list
