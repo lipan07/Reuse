@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
@@ -7,6 +7,7 @@ import { BASE_URL, TOKEN } from '@env';
 
 const AddMotorcycles = ({ route }) => {
   const { category, subcategory } = route.params;
+  const [brands, setBrands] = useState([]);
   const [formData, setFormData] = useState({
     brand: '',
     adTitle: '',
@@ -39,6 +40,29 @@ const AddMotorcycles = ({ route }) => {
       });
     }
   };
+
+  useEffect(() => {
+    const getMotorcycleBrand = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/motorcycle/brand`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${TOKEN}`
+          },
+        });
+        const responseData = await response.json();
+        if (response.ok) {
+          setBrands(responseData);
+        } else {
+          console.log('Motorcycle/Brand: ', responseData);
+        }
+      } catch (error) {
+        console.log('Something went wrong!', error);
+      }
+    };
+    getMotorcycleBrand();
+  }, []);
 
   const handleSubmit = async () => {
     const formDataToSend = new FormData();
@@ -115,61 +139,10 @@ const AddMotorcycles = ({ route }) => {
             onValueChange={(value) => handleChange('brand', value)}
             style={styles.picker}
           >
-            <Picker.Item label="Select Brand" value="" />
-            <Picker.Item value="Harley-Davidson" label="Harley-Davidson" />
-            <Picker.Item value="Yezdi" label="Yezdi" />
-            <Picker.Item value="BMW" label="BMW" />
-            <Picker.Item value="Kawasaki" label="Kawasaki" />
-            <Picker.Item value="Revolt" label="Revolt" />
-            <Picker.Item value="Ducati" label="Ducati" />
-            <Picker.Item value="Jawa" label="Jawa" />
-            <Picker.Item value="Benelli" label="Benelli" />
-            <Picker.Item value="aprilia" label="Aprilia" />
-            <Picker.Item value="Avanturaa Choppers" label="Avanturaa Choppers" />
-            <Picker.Item value="BSA" label="BSA" />
-            <Picker.Item value="cfmoto" label="CFMoto" />
-            <Picker.Item value="cleveland-cyclewerks" label="Cleveland CycleWerks" />
-            <Picker.Item value="Eider" label="Eider" />
-            <Picker.Item value="Emflux Motors" label="Emflux Motors" />
-            <Picker.Item value="Escorts" label="Escorts" />
-            <Picker.Item value="Evolet" label="Evolet" />
-            <Picker.Item value="FB Mondial" label="FB Mondial" />
-            <Picker.Item value="Hero Electric" label="Hero Electric" />
-            <Picker.Item value="Hop Electric" label="Hop Electric" />
-            <Picker.Item value="Husqvarna" label="Husqvarna" />
-            <Picker.Item value="Hyosung" label="Hyosung" />
-            <Picker.Item value="Indian" label="Indian" />
-            <Picker.Item value="Keeway" label="Keeway" />
-            <Picker.Item value="LML" label="LML" />
-            <Picker.Item value="Mahindra" label="Mahindra" />
-            <Picker.Item value="Matter" label="Matter" />
-            <Picker.Item value="Moto Guzzi" label="Moto Guzzi" />
-            <Picker.Item value="Moto Morini" label="Moto Morini" />
-            <Picker.Item value="MV Agusta" label="MV Agusta" />
-            <Picker.Item value="Norton" label="Norton" />
-            <Picker.Item value="Odysse" label="Odysse" />
-            <Picker.Item value="Okinawa" label="Okinawa" />
-            <Picker.Item value="OLA" label="OLA" />
-            <Picker.Item value="PURE EV" label="PURE EV" />
-            <Picker.Item value="QJ Motor" label="QJ Motor" />
-            <Picker.Item value="SWM" label="SWM" />
-            <Picker.Item value="Tork" label="Tork" />
-            <Picker.Item value="Triumph" label="Triumph" />
-            <Picker.Item value="UM" label="UM" />
-            <Picker.Item value="Vespa" label="Vespa" />
-            <Picker.Item value="Victory" label="Victory" />
-            <Picker.Item value="Vida" label="Vida" />
-            <Picker.Item value="Zontes" label="Zontes" />
-            <Picker.Item value="Bajaj" label="Bajaj" />
-            <Picker.Item value="Hero" label="Hero" />
-            <Picker.Item value="Hero Honda" label="Hero Honda" />
-            <Picker.Item value="Honda" label="Honda" />
-            <Picker.Item value="Honda" label="Honda" />
-            <Picker.Item value="Royal Enfield" label="Royal Enfield" />
-            <Picker.Item value="Suzuki" label="Suzuki" />
-            <Picker.Item value="TVS" label="TVS" />
-            <Picker.Item value="Yamaha" label="Yamaha" />
-            <Picker.Item value="Other Brands" label="Other Brands" />
+            <Picker.Item label="Select a brand" value="" />
+            {brands.map((brand) => (
+              <Picker.Item key={brand} label={brand} value={brand} />
+            ))}
           </Picker>
 
           {/* Year Field */}

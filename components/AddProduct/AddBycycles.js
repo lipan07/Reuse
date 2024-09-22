@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
@@ -7,6 +7,7 @@ import { BASE_URL, TOKEN } from '@env';
 
 const AddBycycles = ({ route }) => {
   const { category, subcategory } = route.params;
+  const [brands, setBrands] = useState([]);
   const [formData, setFormData] = useState({
     brand: '',
     adTitle: '',
@@ -37,6 +38,29 @@ const AddBycycles = ({ route }) => {
       });
     }
   };
+
+  useEffect(() => {
+    const getBycycleBrand = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/bycycle/brand`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${TOKEN}`
+          },
+        });
+        const responseData = await response.json();
+        if (response.ok) {
+          setBrands(responseData);
+        } else {
+          console.log('Bycycle/Brand: ', responseData);
+        }
+      } catch (error) {
+        console.log('Something went wrong!', error);
+      }
+    };
+    getBycycleBrand();
+  }, []);
 
   const handleSubmit = async () => {
     const formDataToSend = new FormData();
@@ -113,26 +137,10 @@ const AddBycycles = ({ route }) => {
             onValueChange={(value) => handleChange('brand', value)}
             style={styles.picker}
           >
-            <Picker.Item label="Select Brand" value="" />
-            <Picker.Item value="Hercules" label="Hercules" />
-            <Picker.Item value="Hero" label="Hero" />
-            <Picker.Item value="Adrenix" label="Adrenix" />
-            <Picker.Item value="Atlas" label="Atlas" />
-            <Picker.Item value="BSA" label="BSA" />
-            <Picker.Item value="BTwin" label="BTwin" />
-            <Picker.Item value="Firefox" label="Firefox" />
-            <Picker.Item value="G Sports" label="G Sports" />
-            <Picker.Item value="Giant" label="Giant" />
-            <Picker.Item value="HRX" label="HRX" />
-            <Picker.Item value="Keysto" label="Keysto" />
-            <Picker.Item value="Leader" label="Leader" />
-            <Picker.Item value="Montra" label="Montra" />
-            <Picker.Item value="Ninety one" label="Ninety one" />
-            <Picker.Item value="Scott" label="Scott" />
-            <Picker.Item value="Trek" label="Trek" />
-            <Picker.Item value="Triban" label="Triban" />
-            <Picker.Item value="Vector 91" label="Vector 91" />
-            <Picker.Item value="Other Brands" label="Other Brands" />
+            <Picker.Item label="Select a brand" value="" />
+            {brands.map((brand) => (
+              <Picker.Item key={brand} label={brand} value={brand} />
+            ))}
           </Picker>
 
           {/* Title Field */}
