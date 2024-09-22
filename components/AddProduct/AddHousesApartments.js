@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
@@ -6,8 +6,8 @@ import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-a
 import { BASE_URL, TOKEN } from '@env';
 
 const AddHousesApartments = ({ route }) => {
-  const { category, subcategory } = route.params;
-
+  const { category, subcategory, product } = route.params;
+  console.log(product);
   const [formData, setFormData] = useState({
     propertyType: '',
     bedroom: '',
@@ -28,6 +28,32 @@ const AddHousesApartments = ({ route }) => {
     amount: '',
     images: [],
   });
+
+  useEffect(() => {
+    if (product) {
+      // Populate form fields with existing product data
+      setFormData({
+        adTitle: product.post_details.title,
+        description: product.post_details.description,
+        amount: product.post_details.amount,
+        propertyType: product.post_details.property_type,
+        bedroom: product.post_details.bedrooms.toString(),
+        bathroom: product.post_details.bathroom,
+        furnishing: product.post_details.furnishing,
+        constructionStatus: product.post_details.construction_status,
+        listedBy: product.post_details.listed_by,
+        carParking: product.post_details.car_parking,
+        facing: product.post_details.facing,
+        superBuiltupArea: product.post_details.super_builtup_area,
+        carpetArea: product.post_details.carpet_area.toString(),
+        maintenance: product.post_details.maintenance,
+        totalFloors: product.post_details.total_floors,
+        floorNo: product.post_details.floor_no,
+        projectName: product.post_details.project_name,
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({

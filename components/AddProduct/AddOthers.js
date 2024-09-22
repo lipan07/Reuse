@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Picker } from '@react-native-picker/picker';
-import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { Dialog, AlertNotificationRoot, ALERT_TYPE } from 'react-native-alert-notification';
 import { BASE_URL, TOKEN } from '@env';
 
 const AddOthers = ({ route }) => {
-  const { category, subcategory } = route.params;
-  console.log(subcategory);
+  const { category, subcategory, product } = route.params; // Get product for editing
   const [formData, setFormData] = useState({
     adTitle: '',
     description: '',
     amount: '',
     images: [],
   });
+
+  useEffect(() => {
+    if (product) {
+      console.log(product);
+      // Populate form fields with existing product data
+      setFormData({
+        adTitle: product.post_details.title,
+        description: product.post_details.description,
+        amount: product.post_details.amount,
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({
@@ -25,7 +36,7 @@ const AddOthers = ({ route }) => {
   const handleImagePick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,  // Allow multiple image selection
+      allowsMultipleSelection: true,
       aspect: [4, 3],
       quality: 1,
     });
@@ -33,7 +44,7 @@ const AddOthers = ({ route }) => {
     if (!result.canceled) {
       setFormData({
         ...formData,
-        images: [...formData.images, ...result.assets.map((asset) => asset.uri)], // Add selected images to the array
+        images: [...formData.images, ...result.assets.map((asset) => asset.uri)],
       });
     }
   };
@@ -58,11 +69,13 @@ const AddOthers = ({ route }) => {
     formDataToSend.append('guard_name', subcategory.guard_name);
     formDataToSend.append('post_type', 'sell');
     formDataToSend.append('address', 'India');
-    console.log(formDataToSend);
 
     try {
-      const response = await fetch(`${BASE_URL}/posts`, {
-        method: 'POST',
+      const apiUrl = product ? `${BASE_URL}/posts/${product.id}` : `${BASE_URL}/posts`; // Determine URL for edit or create
+      const method = product ? 'PUT' : 'POST'; // Use PUT for update
+
+      const response = await fetch(apiUrl, {
+        method: method,
         body: formDataToSend,
         headers: {
           'Accept': 'application/json',
@@ -76,7 +89,7 @@ const AddOthers = ({ route }) => {
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
           title: 'Success',
-          textBody: 'Others details submitted successfully!',
+          textBody: product ? 'Product updated successfully!' : 'Product added successfully!',
           button: 'close',
         });
       } else {
@@ -104,7 +117,7 @@ const AddOthers = ({ route }) => {
         style={styles.container}
       >
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
-          <Text style={styles.formHeader}>Add: {subcategory.name}</Text>
+          <Text style={styles.formHeader}>Add/Edit: {subcategory.name}</Text>
 
           {/* Title Field */}
           <Text style={styles.label}>Title *</Text>
@@ -151,7 +164,7 @@ const AddOthers = ({ route }) => {
 
         {/* Fixed Submit Button */}
         <View style={styles.stickyButton}>
-          <Button title="Submit" onPress={handleSubmit} />
+          <Button title={product ? "Update" : "Submit"} onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
     </AlertNotificationRoot>

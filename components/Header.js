@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, Platform, StatusBar, TouchableOpacity, Modal, FlatList, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Image, Platform, StatusBar, TouchableOpacity, Modal, FlatList, TextInput, TouchableWithoutFeedback } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons'; // Import icons
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -46,57 +46,59 @@ const Header = () => {
                </TouchableOpacity>
 
                {/* User Icon */}
-               <TouchableOpacity onPress={() => handleNavigation()} >
+               {/* <TouchableOpacity onPress={() => handleNavigation()} >
                   <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.icon} />
-               </TouchableOpacity>
+               </TouchableOpacity> */}
             </View>
          </View >
 
          <Modal visible={showAddressModal} transparent={true} animationType="slide">
-            <View style={styles.modalContainer}>
-               <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Select Address</Text>
-                  <FlatList
-                     data={addresses}
-                     renderItem={({ item }) => (
+            <TouchableWithoutFeedback onPress={() => setShowAddressModal(false)}>
+               <View style={styles.modalContainer}>
+                  <View style={styles.modalContent}>
+                     <Text style={styles.modalTitle}>Select Address</Text>
+                     <FlatList
+                        data={addresses}
+                        renderItem={({ item }) => (
+                           <TouchableOpacity
+                              style={styles.addressCard}
+                              onPress={() => {
+                                 setSelectedAddress(item.name);
+                                 setShowAddressModal(false);
+                              }}
+                           >
+                              <Text>{item.name}</Text>
+                           </TouchableOpacity>
+                        )}
+                        keyExtractor={(item) => item.id}
+                        horizontal={true}
+                        contentContainerStyle={styles.addressesContainer}
+                     />
+                     <View style={styles.newAddressInput}>
+                        <TextInput
+                           style={styles.newAddressTextInput}
+                           placeholder="Add New Address"
+                           onChangeText={setNewAddress}
+                           value={newAddress}
+                        />
                         <TouchableOpacity
-                           style={styles.addressCard}
+                           style={styles.addButton}
                            onPress={() => {
-                              setSelectedAddress(item.name);
-                              setShowAddressModal(false);
+                              if (newAddress.trim()) {
+                                 setAddresses([...addresses, { id: String(addresses.length + 1), name: newAddress }]);
+                                 setNewAddress('');
+                              }
                            }}
                         >
-                           <Text>{item.name}</Text>
+                           <Text style={styles.addButtonText}>Add</Text>
                         </TouchableOpacity>
-                     )}
-                     keyExtractor={(item) => item.id}
-                     horizontal={true}
-                     contentContainerStyle={styles.addressesContainer}
-                  />
-                  <View style={styles.newAddressInput}>
-                     <TextInput
-                        style={styles.newAddressTextInput}
-                        placeholder="Add New Address"
-                        onChangeText={setNewAddress}
-                        value={newAddress}
-                     />
-                     <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={() => {
-                           if (newAddress.trim()) {
-                              setAddresses([...addresses, { id: String(addresses.length + 1), name: newAddress }]);
-                              setNewAddress('');
-                           }
-                        }}
-                     >
-                        <Text style={styles.addButtonText}>Add</Text>
-                     </TouchableOpacity>
+                     </View>
+                     {/* <TouchableOpacity onPress={() => setShowAddressModal(false)}>
+                        <Text style={styles.closeButton}>Close</Text>
+                     </TouchableOpacity> */}
                   </View>
-                  <TouchableOpacity onPress={() => setShowAddressModal(false)}>
-                     <Text style={styles.closeButton}>Close</Text>
-                  </TouchableOpacity>
                </View>
-            </View>
+            </TouchableWithoutFeedback>
          </Modal>
       </>
    );
