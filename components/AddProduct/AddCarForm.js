@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
@@ -6,7 +6,7 @@ import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-a
 import { BASE_URL, TOKEN } from '@env';
 
 const AddCarForm = ({ route }) => {
-  const { category } = route.params;
+  const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
     brand: '',
     year: '',
@@ -19,6 +19,24 @@ const AddCarForm = ({ route }) => {
     amount: '',
     images: [], // Updated to handle multiple images
   });
+
+  useEffect(() => {
+    if (product) {
+      // Populate form fields with existing product data
+      setFormData({
+        adTitle: product.post_details.title,
+        description: product.post_details.description,
+        amount: product.post_details.amount,
+        kmDriven: product.post_details.km_driven.toString(),
+        brand: product.post_details.brand,
+        year: product.post_details.year,
+        transmission: product.post_details.transmission,
+        owners: product.post_details.no_of_owner,
+        fuelType: product.post_details.fuel,
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({
@@ -120,7 +138,7 @@ const AddCarForm = ({ route }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
           <Text style={styles.formHeader}>
-            Add Product - {category.name}
+            Add Product - {category.name || subcategory.name}
           </Text>
 
           {/* Brand Field */}

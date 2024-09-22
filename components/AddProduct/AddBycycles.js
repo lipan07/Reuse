@@ -6,7 +6,7 @@ import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-a
 import { BASE_URL, TOKEN } from '@env';
 
 const AddBycycles = ({ route }) => {
-  const { category, subcategory } = route.params;
+  const { category, subcategory, product } = route.params;
   const [brands, setBrands] = useState([]);
   const [formData, setFormData] = useState({
     brand: '',
@@ -15,6 +15,19 @@ const AddBycycles = ({ route }) => {
     amount: '',
     images: [],
   });
+
+  useEffect(() => {
+    if (product) {
+      console.log(product);
+      // Populate form fields with existing product data
+      setFormData({
+        adTitle: product.post_details.title,
+        description: product.post_details.description,
+        amount: product.post_details.amount,
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({

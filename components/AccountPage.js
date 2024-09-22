@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons'; // Import FontAwesome5 icons
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AccountPage = ({ navigation }) => {
     const profileImage = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; // Provided profile image URL
@@ -19,6 +20,17 @@ const AccountPage = ({ navigation }) => {
     const handleSettings = () => { navigation.navigate('Settings') };
     const handleHelpAndSupport = () => { };
 
+    const handleLogout = async () => {
+        try {
+            await AsyncStorage.removeItem('authToken');
+            navigation.navigate('Login')
+            console.log('Logged out successfully');
+            // Optionally, navigate to the login screen or perform other actions
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    }
+
     return (
         <>
             <View style={styles.container}>
@@ -32,6 +44,7 @@ const AccountPage = ({ navigation }) => {
                 {renderAccountLink('Buy Packages', 'shopping-cart', handleBuyPackages)}
                 {renderAccountLink('Settings', 'cog', handleSettings)}
                 {renderAccountLink('Help and Support', 'question-circle', handleHelpAndSupport)}
+                {renderAccountLink('Logout', 'sign-out-alt', handleLogout)}
             </View>
         </>
     );
