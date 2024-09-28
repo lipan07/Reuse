@@ -6,9 +6,6 @@ import { useNavigation } from '@react-navigation/native';
 import BottomNavBar from './BottomNavBar';
 import { BASE_URL, TOKEN } from '@env';
 
-const base_url = BASE_URL;
-const token = TOKEN;
-
 const ProductAddPage = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -18,9 +15,9 @@ const ProductAddPage = () => {
   // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
-      const apiUrl = `${base_url}/category`;
+      const apiUrl = `${BASE_URL}/category`;
       const myHeaders = new Headers();
-      myHeaders.append("Authorization", `Bearer ${token}`);
+      myHeaders.append("Authorization", `Bearer ${TOKEN}`);
 
       const requestOptions = {
         method: "GET",

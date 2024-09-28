@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
-import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
-import { BASE_URL, TOKEN } from '@env';
+import { submitForm } from '../../service/apiService';
 
 const AddHousesApartments = ({ route }) => {
   const { category, subcategory, product } = route.params;
@@ -83,65 +82,17 @@ const AddHousesApartments = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (key === 'images') {
-        formData.images.forEach((imageUri, index) => {
-          formDataToSend.append('images[]', {
-            uri: imageUri,
-            type: 'image/jpeg',
-            name: `image_${index}.jpg`,
-          });
-        });
-      } else {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
-
-    formDataToSend.append('category_id', subcategory.id);
-    formDataToSend.append('guard_name', subcategory.guard_name);
-    formDataToSend.append('post_type', 'sell');
-    formDataToSend.append('address', 'India');
-
-    try {
-      const response = await fetch(`${BASE_URL}/posts`, {
-        method: 'POST',
-        body: formDataToSend,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${TOKEN}`
-        },
+    submitForm(formData, subcategory)  // Use the centralized function
+      .then((response) => {
+        console.log('Form submitted successfully', response);
+      })
+      .catch((error) => {
+        console.error('Error submitting form', error);
       });
-
-      const responseData = await response.json();
-      if (response.ok) {
-        Dialog.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Success',
-          textBody: 'Houses & Apartments details submitted successfully!',
-          button: 'close',
-        });
-      } else {
-        Dialog.show({
-          type: ALERT_TYPE.WARNING,
-          title: 'Validation Error',
-          textBody: responseData.message,
-          button: 'close',
-        });
-      }
-    } catch (error) {
-      Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Error',
-        textBody: 'There was an issue submitting the form.',
-        button: 'close',
-      });
-    }
   };
 
   return (
-    <AlertNotificationRoot>
+    <>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -345,7 +296,7 @@ const AddHousesApartments = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </AlertNotificationRoot>
+    </>
   );
 };
 

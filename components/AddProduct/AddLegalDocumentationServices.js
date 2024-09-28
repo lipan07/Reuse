@@ -1,15 +1,29 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { submitForm } from '../../service/apiService';
 
 const AddLegalDocumentationServices = ({ route }) => {
-  const { category, subcategory } = route.params;
+  const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
     type: '',
-    title: '',
+    adTitle: '',
     description: '',
     images: [],
   });
+
+  useEffect(() => {
+    if (product) {
+      // Populate form fields with existing product data
+      setFormData({
+        type: product.post_details.type,
+        adTitle: product.post_details.title,
+        description: product.post_details.description,
+        amount: product.post_details.amount,
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({
@@ -42,88 +56,77 @@ const AddLegalDocumentationServices = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      formDataToSend.append(key, formData[key]);
-    });
-
-    try {
-      const response = await fetch('/api/job', {
-        method: 'POST',
-        body: formDataToSend,
+    submitForm(formData, subcategory)  // Use the centralized function
+      .then((response) => {
+        console.log('Form submitted successfully', response);
+      })
+      .catch((error) => {
+        console.error('Error submitting form', error);
       });
-
-      if (response.ok) {
-        Alert.alert('Success', 'Job details submitted successfully!');
-      } else {
-        console.error('Error submitting form:', response.statusText);
-        Alert.alert('Error', 'There was an issue submitting the form.');
-      }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.formHeader}>Add: {subcategory.name}</Text>
+    <>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <Text style={styles.formHeader}>Add: {subcategory.name}</Text>
 
-        {/* Salary Period Selection */}
-        <Text style={styles.label}>Type *</Text>
-        <View style={styles.optionContainer}>
-          {['RTO Related', 'KYC Related', 'Notary Services', 'Others'].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[styles.optionButton, formData.type === val && styles.selectedOption]}
-              onPress={() => handleSelection('type', val)}
-            >
-              <Text style={formData.type === val ? styles.selectedText : styles.optionText}>{val}</Text>
-            </TouchableOpacity>
-          ))}
+          {/* Salary Period Selection */}
+          <Text style={styles.label}>Type *</Text>
+          <View style={styles.optionContainer}>
+            {['RTO Related', 'KYC Related', 'Notary Services', 'Others'].map((val) => (
+              <TouchableOpacity
+                key={val}
+                style={[styles.optionButton, formData.type === val && styles.selectedOption]}
+                onPress={() => handleSelection('type', val)}
+              >
+                <Text style={formData.type === val ? styles.selectedText : styles.optionText}>{val}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Title Field */}
+          <Text style={styles.label}>Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Title"
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
+          />
+
+          {/* Description Field */}
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            placeholder="Enter Description"
+            value={formData.description}
+            multiline
+            onChangeText={(value) => handleChange('description', value)}
+          />
+
+          {/* Image Picker */}
+          <Text style={styles.label}>Select Images</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+            <Text style={styles.imagePickerText}>Pick images</Text>
+          </TouchableOpacity>
+
+          {/* Display Selected Images */}
+          <View style={styles.imagesContainer}>
+            {formData.images.map((imageUri, index) => (
+              <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Fixed Submit Button */}
+        <View style={styles.stickyButton}>
+          <Button title="Submit" onPress={handleSubmit} />
         </View>
-
-        {/* Title Field */}
-        <Text style={styles.label}>Title *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Title"
-          value={formData.title}
-          onChangeText={(value) => handleChange('title', value)}
-        />
-
-        {/* Description Field */}
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="Enter Description"
-          value={formData.description}
-          multiline
-          onChangeText={(value) => handleChange('description', value)}
-        />
-
-        {/* Image Picker */}
-        <Text style={styles.label}>Select Images</Text>
-        <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-          <Text style={styles.imagePickerText}>Pick images</Text>
-        </TouchableOpacity>
-
-        {/* Display Selected Images */}
-        <View style={styles.imagesContainer}>
-          {formData.images.map((imageUri, index) => (
-            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* Fixed Submit Button */}
-      <View style={styles.stickyButton}>
-        <Button title="Submit" onPress={handleSubmit} />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </>
   );
 };
 

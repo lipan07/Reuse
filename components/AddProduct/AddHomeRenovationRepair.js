@@ -2,16 +2,30 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
+import { submitForm } from '../../service/apiService';
 
 const AddHomeRenovationRepair = ({ route }) => {
-  const { category, subcategory } = route.params;
+  const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
-    brand: '',
-    title: '',
+    type: '',
+    adTitle: '',
     description: '',
     amount: '',
     images: [],
   });
+
+  useEffect(() => {
+    if (product) {
+      // Populate form fields with existing product data
+      setFormData({
+        type: product.post_details.type,
+        adTitle: product.post_details.title,
+        description: product.post_details.description,
+        amount: product.post_details.amount,
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({
@@ -37,100 +51,89 @@ const AddHomeRenovationRepair = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      formDataToSend.append(key, formData[key]);
-    });
-
-    try {
-      const response = await fetch('/api/mobile-tablets', {
-        method: 'POST',
-        body: formDataToSend,
+    submitForm(formData, subcategory)  // Use the centralized function
+      .then((response) => {
+        console.log('Form submitted successfully', response);
+      })
+      .catch((error) => {
+        console.error('Error submitting form', error);
       });
-
-      if (response.ok) {
-        Alert.alert('Success', 'Mobile/Tablet details submitted successfully!');
-      } else {
-        console.error('Error submitting form:', response.statusText);
-        Alert.alert('Error', 'There was an issue submitting the form.');
-      }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.formHeader}>Add: {subcategory.name}</Text>
+    <>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <Text style={styles.formHeader}>Add: {subcategory.name}</Text>
 
-        {/* Brand Selection */}
-        <Text style={styles.label}>Type *</Text>
-        <Picker
-          selectedValue={formData.brand}
-          onValueChange={(value) => handleChange('brand', value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Select Type" value="" />
-          <Picker.Item value="builder-contractor" label="Builder &amp; Contractor" />
-          <Picker.Item value="plumber" label="Plumber" />
-          <Picker.Item value="electrician" label="Electrician" />
-          <Picker.Item value="carpenter" label="Carpenter" />
-          <Picker.Item value="painter" label="Painter" />
-          <Picker.Item value="others" label="Others" />
-        </Picker>
+          {/* Type Selection */}
+          <Text style={styles.label}>Type *</Text>
+          <Picker
+            selectedValue={formData.type}
+            onValueChange={(value) => handleChange('type', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Type" value="" />
+            <Picker.Item value="builder-contractor" label="Builder &amp; Contractor" />
+            <Picker.Item value="plumber" label="Plumber" />
+            <Picker.Item value="electrician" label="Electrician" />
+            <Picker.Item value="carpenter" label="Carpenter" />
+            <Picker.Item value="painter" label="Painter" />
+            <Picker.Item value="others" label="Others" />
+          </Picker>
 
-        {/* Title Field */}
-        <Text style={styles.label}>Title *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Title"
-          value={formData.title}
-          onChangeText={(value) => handleChange('title', value)}
-        />
+          {/* Title Field */}
+          <Text style={styles.label}>Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Title"
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
+          />
 
-        {/* Description Field */}
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="Enter Description"
-          value={formData.description}
-          multiline
-          onChangeText={(value) => handleChange('description', value)}
-        />
+          {/* Description Field */}
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            placeholder="Enter Description"
+            value={formData.description}
+            multiline
+            onChangeText={(value) => handleChange('description', value)}
+          />
 
-        {/* Amount Field */}
-        <Text style={styles.label}>Amount *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Amount"
-          keyboardType="numeric"
-          value={formData.amount}
-          onChangeText={(value) => handleChange('amount', value)}
-        />
+          {/* Amount Field */}
+          <Text style={styles.label}>Amount *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Amount"
+            keyboardType="numeric"
+            value={formData.amount}
+            onChangeText={(value) => handleChange('amount', value)}
+          />
 
-        {/* Image Picker */}
-        <Text style={styles.label}>Select Images</Text>
-        <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-          <Text style={styles.imagePickerText}>Pick images</Text>
-        </TouchableOpacity>
+          {/* Image Picker */}
+          <Text style={styles.label}>Select Images</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+            <Text style={styles.imagePickerText}>Pick images</Text>
+          </TouchableOpacity>
 
-        {/* Display Selected Images */}
-        <View style={styles.imagesContainer}>
-          {formData.images.map((imageUri, index) => (
-            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-          ))}
+          {/* Display Selected Images */}
+          <View style={styles.imagesContainer}>
+            {formData.images.map((imageUri, index) => (
+              <Image key={index} source={{ uri: imageUri }} style={styles.image} />
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Fixed Submit Button */}
+        <View style={styles.stickyButton}>
+          <Button title="Submit" onPress={handleSubmit} />
         </View>
-      </ScrollView>
-
-      {/* Fixed Submit Button */}
-      <View style={styles.stickyButton}>
-        <Button title="Submit" onPress={handleSubmit} />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </>
   );
 };
 

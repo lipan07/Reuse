@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
-import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
-import { BASE_URL, TOKEN } from '@env';
+import { submitForm } from '../../service/apiService';
 
 const AddMobileTablets = ({ route }) => {
   const { category } = route.params;
@@ -39,66 +38,17 @@ const AddMobileTablets = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (key === 'images') {
-        formData.images.forEach((imageUri, index) => {
-          formDataToSend.append('images[]', {
-            uri: imageUri,
-            type: 'image/jpeg',
-            name: `image_${index}.jpg`,
-          });
-        });
-      } else {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
-
-    formDataToSend.append('category_id', category.id);
-    formDataToSend.append('guard_name', category.guard_name);
-    formDataToSend.append('post_type', 'sell');
-    formDataToSend.append('address', 'India');
-    console.log(formDataToSend);
-    try {
-      const response = await fetch(`${BASE_URL}/posts`, {
-        method: 'POST',
-        body: formDataToSend,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${TOKEN}`
-        },
+    submitForm(formData, subcategory)  // Use the centralized function
+      .then((response) => {
+        console.log('Form submitted successfully', response);
+      })
+      .catch((error) => {
+        console.error('Error submitting form', error);
       });
-
-      const responseData = await response.json();
-      console.log(responseData);
-      if (response.ok) {
-        Dialog.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Success',
-          textBody: 'Device added successfully!',
-          button: 'close',
-        });
-      } else {
-        Dialog.show({
-          type: ALERT_TYPE.WARNING,
-          title: 'Validation Error',
-          textBody: responseData.message,
-          button: 'close',
-        });
-      }
-    } catch (error) {
-      Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Error',
-        textBody: 'There was an issue submitting the form.',
-        button: 'close',
-      });
-    }
   };
 
   return (
-    <AlertNotificationRoot>
+    <>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -190,7 +140,7 @@ const AddMobileTablets = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </AlertNotificationRoot>
+    </>
   );
 };
 
