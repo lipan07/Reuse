@@ -34,7 +34,6 @@ const Home = ({ navigation }) => {
     try {
       const response = await fetch(apiUrl, requestOptions);
       const jsonResponse = await response.json();
-
       if (!jsonResponse.data || jsonResponse.data.length === 0) {
         setProducts([]); // Clear product list if no data is returned
         setHasMore(false); // Stop further fetching
@@ -45,7 +44,7 @@ const Home = ({ navigation }) => {
       }
 
       setCurrentPage(page);
-      setHasMore(jsonResponse.data && jsonResponse.data.length == 15);
+      setHasMore(jsonResponse.data && jsonResponse.data.length === 15 && jsonResponse.links.next != null);
     } catch (error) {
       console.error('Failed to load products', error);
     } finally {

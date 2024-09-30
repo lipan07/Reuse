@@ -1,8 +1,8 @@
 import { BASE_URL, TOKEN } from '@env';
 import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
 
-export const submitForm = async (formData, subcategory) => {
-    const formDataToSend = new FormData();
+export const updateForm = async (formData, subcategory) => {
+    const formDataToSend = new URLSearchParams();
     Object.keys(formData).forEach((key) => {
         if (key === 'images') {
             formData.images.forEach((imageUri, index) => {
@@ -21,20 +21,15 @@ export const submitForm = async (formData, subcategory) => {
     formDataToSend.append('guard_name', subcategory.guard_name);
     formDataToSend.append('post_type', 'sell');
     formDataToSend.append('address', 'India');
-
-    var apiUrl = `${BASE_URL}/posts`;
-    if (formData.id) {
-        apiUrl = `${BASE_URL}/posts/${formData.id}`;
-    }
-    console.log(apiUrl);
-    console.log(formDataToSend);
+    console.log(`${BASE_URL}/posts/${formData.id}`);
     try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
+        const response = await fetch(`${BASE_URL}/posts/${formData.id}`, {
+            method: 'PUT',
             body: formDataToSend,
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'multipart/form-data',
+                // 'Content-Type': 'multipart/form-data',
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${TOKEN}`
             },
         });
@@ -44,7 +39,7 @@ export const submitForm = async (formData, subcategory) => {
             Dialog.show({
                 type: ALERT_TYPE.SUCCESS,
                 title: 'Success',
-                textBody: 'Details submitted successfully!',
+                textBody: 'Details updated successfully!',
                 button: 'close',
             });
         } else {
