@@ -18,12 +18,13 @@ const AddBycycles = ({ route }) => {
 
   useEffect(() => {
     if (product) {
-      console.log(product);
       // Populate form fields with existing product data
       setFormData({
-        adTitle: product.post_details.title,
-        description: product.post_details.description,
-        amount: product.post_details.amount,
+        id: product.id,
+        brand: product.post_details.brand ?? '',
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
       });
     }

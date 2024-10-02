@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { submitForm } from '../../service/apiService';
 
 const AddPgGuestHouse = ({ route }) => {
-  const { category, subcategory } = route.params;
+  const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
     pgType: '',
     furnishing: '',
@@ -17,6 +17,25 @@ const AddPgGuestHouse = ({ route }) => {
     amount: '',
     images: [],  // Changed to handle multiple images
   });
+
+  useEffect(() => {
+    if (product) {
+      // Populate form fields with existing product data
+      setFormData({
+        id: product.id,
+        pgType: product.post_details.pg_type ?? '',
+        furnishing: product.post_details.furnishing ?? '',
+        listedBy: product.post_details.listed_by ?? '',
+        carParking: product.post_details.car_parking ?? '',
+        isMealIncluded: product.post_details.is_meal_included ?? '',
+        carpetArea: product.post_details.carpet_area ?? '',
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({

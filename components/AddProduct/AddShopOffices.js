@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { submitForm } from '../../service/apiService';
 
 const AddShopOffices = ({ route }) => {
-    const { category, subcategory } = route.params;
+    const { category, subcategory, product } = route.params;
     const [formData, setFormData] = useState({
         furnishing: '',
         constructionStatus: '',
@@ -20,6 +20,28 @@ const AddShopOffices = ({ route }) => {
         amount: '',
         images: [],
     });
+
+    useEffect(() => {
+        if (product) {
+            // Populate form fields with existing product data
+            setFormData({
+                id: product.id,
+                furnishing: product.post_details.furnishing ?? '',
+                constructionStatus: product.post_details.construction_status ?? '',
+                listedBy: product.post_details.listed_by ?? '',
+                carParking: product.post_details.car_parking ?? '',
+                superBuiltUpArea: product.post_details.super_builtup_area ?? '',
+                carpetArea: product.post_details.carpet_area ?? '',
+                maintenance: product.post_details.maintenance ?? '',
+                washroom: product.post_details.washroom ?? '',
+                projectName: product.post_details.project_name ?? '',
+                adTitle: product.post_details.title ?? '',
+                description: product.post_details.description ?? '',
+                amount: product.post_details.amount ?? '',
+                images: product.images || [], // Set existing images
+            });
+        }
+    }, [product]);
 
     const handleChange = (name, value) => {
         setFormData({

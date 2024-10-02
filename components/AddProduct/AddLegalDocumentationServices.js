@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { submitForm } from '../../service/apiService';
@@ -16,10 +16,11 @@ const AddLegalDocumentationServices = ({ route }) => {
     if (product) {
       // Populate form fields with existing product data
       setFormData({
-        type: product.post_details.type,
-        adTitle: product.post_details.title,
-        description: product.post_details.description,
-        amount: product.post_details.amount,
+        id: product.id,
+        type: product.post_details.type ?? '',
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
       });
     }

@@ -16,10 +16,6 @@ const ProductDetails = ({ route }) => {
         // Handle call functionality...
     };
 
-    const handleChatPress = () => {
-        // Handle chat functionality...
-    };
-
     const handleCompanyNamePress = () => {
         navigation.navigate('CompanyDetailsPage', 'Malaq');
     };
@@ -29,6 +25,20 @@ const ProductDetails = ({ route }) => {
         navigation.navigate('FullScreenMap', {
             latitude: 22.5726,
             longitude: 88.3639,
+        });
+    };
+
+    const handleChatPress = () => {
+        // Assuming you have access to the current user's ID (buyer)
+        const buyerId = 'currentUserId'; // Replace with actual buyer's ID
+        const sellerId = product.user_id; // Assuming 'user_id' is the seller's ID
+
+        // Navigate to ChatBox and pass necessary parameters
+        navigation.navigate('ChatBox', {
+            productId: product.id,
+            sellerId: sellerId,
+            buyerId: buyerId,
+            productTitle: product.post_details.title,
         });
     };
     return (

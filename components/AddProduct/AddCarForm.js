@@ -23,15 +23,16 @@ const AddCarForm = ({ route }) => {
     if (product) {
       // Populate form fields with existing product data
       setFormData({
-        adTitle: product.post_details.title,
-        description: product.post_details.description,
-        amount: product.post_details.amount,
-        kmDriven: product.post_details.km_driven.toString(),
-        brand: product.post_details.brand,
-        year: product.post_details.year,
-        transmission: product.post_details.transmission,
-        owners: product.post_details.no_of_owner,
-        fuelType: product.post_details.fuel,
+        id: product.id,
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
+        kmDriven: product.post_details.km_driven.toString() ?? '',
+        brand: product.post_details.brand ?? '',
+        year: product.post_details.year ?? '',
+        transmission: product.post_details.transmission ?? '',
+        owners: product.post_details.no_of_owner ?? '',
+        fuelType: product.post_details.fuel ?? '',
         images: product.images || [], // Set existing images
       });
     }

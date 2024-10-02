@@ -18,10 +18,11 @@ const AddElectronicsRepairServices = ({ route }) => {
     if (product) {
       // Populate form fields with existing product data
       setFormData({
-        type: product.post_details.type,
-        adTitle: product.post_details.title,
-        description: product.post_details.description,
-        amount: product.post_details.amount,
+        id: product.id,
+        type: product.post_details.type ?? '',
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
       });
     }

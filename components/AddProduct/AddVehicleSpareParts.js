@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { submitForm } from '../../service/apiService';
 
 const AddVehicleSpareParts = ({ route }) => {
-  const { category, subcategory } = route.params;
+  const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
     type: '',
-    title: '',
+    adTitle: '',
+    amount: '',
     description: '',
     images: [],
   });
+
+  useEffect(() => {
+    if (product) {
+      // Populate form fields with existing product data
+      setFormData({
+        id: product.id,
+        type: product.post_details.type ?? '',
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({
@@ -80,8 +95,8 @@ const AddVehicleSpareParts = ({ route }) => {
           <TextInput
             style={styles.input}
             placeholder="Enter Title"
-            value={formData.title}
-            onChangeText={(value) => handleChange('title', value)}
+            value={formData.adTitle}
+            onChangeText={(value) => handleChange('adTitle', value)}
           />
 
           {/* Description Field */}
@@ -92,6 +107,16 @@ const AddVehicleSpareParts = ({ route }) => {
             value={formData.description}
             multiline
             onChangeText={(value) => handleChange('description', value)}
+          />
+
+          {/* Amount */}
+          <Text style={styles.label}>Amount *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Amount"
+            keyboardType="numeric"
+            value={formData.amount}
+            onChangeText={(value) => handleChange('amount', value)}
           />
 
           {/* Image Picker */}

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
 
 const AddJob = ({ route }) => {
-  const { category, subcategory } = route.params;
+  const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
     salaryPeriod: '',
     positionType: '',
@@ -15,6 +15,22 @@ const AddJob = ({ route }) => {
     description: '',
     images: [],
   });
+
+  useEffect(() => {
+    if (product) {
+      // Populate form fields with existing product data
+      setFormData({
+        id: product.id,
+        salaryPeriod: product.post_details.salary_period ?? '',
+        positionType: product.post_details.position_type ?? '',
+        salaryFrom: product.post_details.salary_from ?? '',
+        salaryTo: product.post_details.salary_to ?? '',
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({

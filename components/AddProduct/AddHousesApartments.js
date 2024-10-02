@@ -30,25 +30,27 @@ const AddHousesApartments = ({ route }) => {
 
   useEffect(() => {
     if (product) {
+      console.log(product.post_details.car_parking);
       // Populate form fields with existing product data
       setFormData({
-        adTitle: product.post_details.title,
-        description: product.post_details.description,
-        amount: product.post_details.amount,
-        propertyType: product.post_details.property_type,
-        bedroom: product.post_details.bedrooms.toString(),
-        bathroom: product.post_details.bathroom,
-        furnishing: product.post_details.furnishing,
-        constructionStatus: product.post_details.construction_status,
-        listedBy: product.post_details.listed_by,
-        carParking: product.post_details.car_parking,
-        facing: product.post_details.facing,
-        superBuiltupArea: product.post_details.super_builtup_area,
-        carpetArea: product.post_details.carpet_area.toString(),
-        maintenance: product.post_details.maintenance,
-        totalFloors: product.post_details.total_floors,
-        floorNo: product.post_details.floor_no,
-        projectName: product.post_details.project_name,
+        id: product.id,
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
+        propertyType: product.post_details.property_type ?? '',
+        bedroom: product.post_details.bedrooms.toString() ?? '',
+        bathroom: product.post_details.bathrooms ?? '',
+        furnishing: product.post_details.furnishing ?? '',
+        constructionStatus: product.post_details.construction_status ?? '',
+        listedBy: product.post_details.listed_by ?? '',
+        carParking: product.post_details.car_parking.toString() ?? '',
+        facing: product.post_details.facing ?? '',
+        superBuiltupArea: product.post_details.super_builtup_area.toString() ?? '',
+        carpetArea: product.post_details.carpet_area.toString() ?? '',
+        maintenance: product.post_details.maintenance ?? '',
+        totalFloors: product.post_details.total_floors ?? '',
+        floorNo: product.post_details.floor_no ?? '',
+        projectName: product.post_details.project_name ?? '',
         images: product.images || [], // Set existing images
       });
     }

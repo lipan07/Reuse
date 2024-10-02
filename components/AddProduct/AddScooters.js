@@ -6,7 +6,7 @@ import { submitForm } from '../../service/apiService';
 import { BASE_URL, TOKEN } from '@env';
 
 const AddScooters = ({ route }) => {
-  const { category, subcategory } = route.params;
+  const { category, subcategory, product } = route.params;
   const [brands, setBrands] = useState([]);
   const [formData, setFormData] = useState({
     brand: '',
@@ -17,6 +17,22 @@ const AddScooters = ({ route }) => {
     amount: '',
     images: [],
   });
+
+  useEffect(() => {
+    if (product) {
+      // Populate form fields with existing product data
+      setFormData({
+        id: product.id,
+        brand: product.post_details.brand ?? '',
+        year: product.post_details.year ?? '',
+        km_driven: product.post_details.km_driven ?? '',
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
+        images: product.images || [], // Set existing images
+      });
+    }
+  }, [product]);
 
   const handleChange = (name, value) => {
     setFormData({
