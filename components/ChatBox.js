@@ -1,9 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Keyboard, ScrollView, KeyboardAvoidingView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Keyboard, ScrollView, StyleSheet } from 'react-native';
 import BottomNavBar from './BottomNavBar';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import Echo from 'laravel-echo';
+// import Pusher from 'pusher-js';
+import Pusher from 'pusher-js/react-native';
+import { BASE_URL, TOKEN, PUSHER_KEY, PUSHER_CLUSTER } from '@env';
 
-const ChatBox = () => {
+const Token = TOKEN;
+const PusherKey = PUSHER_KEY;
+const PusherCluster = PUSHER_CLUSTER;
+const chatID = '9d3cdd00-e664-4468-9ac8-0cdc889d84bf';
+
+const headers = {
+  'Accept': 'application/json',
+  'Content-Type': 'multipart/form-data',
+  'Authorization': `Bearer ${Token}`,
+};
+
+const ChatBox = ({ route }) => {
   const navigation = useNavigation();
   const inputRef = useRef(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -11,67 +27,119 @@ const ChatBox = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [inputText, setInputText] = useState('');
 
+  // Function to fetch chat messages
+  const fetchChatHistory = async () => {
+    console.log(`${BASE_URL}/chats/${chatID}`);
+    try {
+      const response = await fetch(`${BASE_URL}/chats/${chatID}`, {
+        method: 'GET',
+        headers: headers,
+      });
+
+      const responseData = await response.json();
+      console.log(responseData);
+      setChatHistory(responseData.chats); // Set the chat history with the fetched messages
+    } catch (error) {
+      console.error('Failed to fetch chat history:', error);
+    }
+  };
+
+  // Initialize Laravel Echo with Pusher
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
-      setKeyboardHeight(event.endCoordinates.height);
-      setShowMessageOptions(true);
+    const echo = new Echo({
+      broadcaster: 'pusher',
+      client: new Pusher(PusherKey, {
+        cluster: PusherCluster,
+        encrypted: true,
+        authEndpoint: `${BASE_URL}/broadcasting/auth`,
+        auth: {
+          headers: {
+            Authorization: `Bearer ${Token}`,
+          },
+        },
+      }),
     });
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0);
-      setShowMessageOptions(false);
+    // Subscribe to the chat channel
+    const channel = echo.channel(`chat.${chatID}`); // Subscribe to the specific chat channel
+    channel.listen('MessageSent', (e) => {
+      // Add the received message to the chat history
+      setChatHistory((prevMessages) => [...prevMessages, e.message]);
     });
 
     return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
+      // channel.unbind(); // Unsubscribe on cleanup
+      echo.disconnect(); // Disconnect Echo on component unmount
     };
   }, []);
 
-  const handleMessageOption = (message) => {
-    const updatedChatHistory = [...chatHistory, { id: chatHistory.length + 1, message }];
-    setChatHistory(updatedChatHistory);
+  // Handle sending a message
+  const handleSend = async () => {
+    if (inputText.trim() !== '') {
+      const formDataToSend = new FormData();
+      const messageData = {
+        chat_id: chatID, // Assuming chat_id is passed through navigation params
+        sender_id: '9d3afef1-d5fc-4ca3-ac68-c118be8b0661', // Assuming user_id is passed through navigation params
+        message: inputText,
+      };
+
+      // Set up your form data
+      formDataToSend.append('post_id', '9d3b02c8-34fc-4cd8-8464-1cdaf22cd4c8');
+      formDataToSend.append('sender_id', '9d3afef1-d5fc-4ca3-ac68-c118be8b0661'); // Use dynamic sender ID
+      formDataToSend.append('receiver_id', '9d3afef1-d5fc-4ca3-ac68-c118be8b0661'); // Update receiver ID
+      formDataToSend.append('message', inputText);
+
+      try {
+        const response = await fetch(`${BASE_URL}/chats`, {
+          method: 'POST',
+          body: formDataToSend,
+          headers: headers,
+        });
+
+        const responseData = await response.json();
+        console.log(responseData);
+
+        // Clear input after sending
+        setInputText('');
+      } catch (error) {
+        console.error('Failed to save message:', error);
+      }
+    }
   };
 
-  const handleSend = () => {
-    if (inputText.trim() !== '') {
-      const updatedChatHistory = [...chatHistory, { id: chatHistory.length + 1, message: inputText }];
-      setChatHistory(updatedChatHistory);
-      setInputText(''); // Clear input after sending
-    }
+  const handleMessageOption = (message) => {
+    setInputText(message); // Set the selected message option in the input field
   };
 
   const handleDismissKeyboard = () => {
     Keyboard.dismiss();
   };
-
-  const handleProductPress = (productId) => {
-    navigation.navigate('ProductDetails', { productId });
-  };
+  useEffect(() => {
+    fetchChatHistory();
+  }, []);
 
   return (
     <TouchableOpacity style={styles.container} activeOpacity={1} onPress={handleDismissKeyboard}>
       <ScrollView style={styles.chatHistory} contentContainerStyle={{ paddingBottom: 20 }}>
-        {chatHistory.map((chat) => (
-          <Text key={chat.id} style={styles.chatMessage}>{chat.message}</Text>
+        {chatHistory.map((chat, index) => (
+          <Text key={index} style={styles.chatMessage}>{chat.message}</Text>
         ))}
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: keyboardHeight }]}>
         <View style={styles.messageOptionsContainer}>
           {showMessageOptions && (
             <View style={styles.messageOptions}>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available')}>
+              <TouchableOpacity onPress={() => handleMessageOption('Is it available?')}>
                 <Text style={styles.messageOption}>Is it available?</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available')}>
+              <TouchableOpacity onPress={() => handleMessageOption('What is the last price?')}>
                 <Text style={styles.messageOption}>What is the last price?</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available')}>
+              <TouchableOpacity onPress={() => handleMessageOption('Is it negotiable?')}>
                 <Text style={styles.messageOption}>Is it negotiable?</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available')}>
-                <Text style={styles.messageOption}>Your phone no?</Text>
+              <TouchableOpacity onPress={() => handleMessageOption('Your phone number?')}>
+                <Text style={styles.messageOption}>Your phone number?</Text>
               </TouchableOpacity>
-              {/* Add other message options similarly */}
             </View>
           )}
         </View>

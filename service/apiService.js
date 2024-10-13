@@ -1,5 +1,6 @@
 import { BASE_URL, TOKEN } from '@env';
 import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
+const Token = TOKEN;
 
 export const submitForm = async (formData, subcategory) => {
     const formDataToSend = new FormData();
@@ -35,7 +36,7 @@ export const submitForm = async (formData, subcategory) => {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'multipart/form-data',
-                'Authorization': `Bearer ${TOKEN}`
+                'Authorization': `Bearer ${Token}`
             },
         });
 

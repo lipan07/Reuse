@@ -6,7 +6,7 @@ import BottomNavBar from './BottomNavBar';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL, TOKEN } from '@env';
-
+const Token = TOKEN;
 const Home = ({ navigation }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [products, setProducts] = useState([]);
