@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
-import { BASE_URL, TOKEN } from '@env';
+import { submitForm } from '../../service/apiService';
 
 const AddShopOffices = ({ route }) => {
-    const { category, subcategory } = route.params;
+    const { category, subcategory, product } = route.params;
     const [formData, setFormData] = useState({
         furnishing: '',
         constructionStatus: '',
@@ -21,6 +20,28 @@ const AddShopOffices = ({ route }) => {
         amount: '',
         images: [],
     });
+
+    useEffect(() => {
+        if (product) {
+            // Populate form fields with existing product data
+            setFormData({
+                id: product.id,
+                furnishing: product.post_details.furnishing ?? '',
+                constructionStatus: product.post_details.construction_status ?? '',
+                listedBy: product.post_details.listed_by ?? '',
+                carParking: product.post_details.car_parking ?? '',
+                superBuiltUpArea: product.post_details.super_builtup_area ?? '',
+                carpetArea: product.post_details.carpet_area ?? '',
+                maintenance: product.post_details.maintenance ?? '',
+                washroom: product.post_details.washroom ?? '',
+                projectName: product.post_details.project_name ?? '',
+                adTitle: product.post_details.title ?? '',
+                description: product.post_details.description ?? '',
+                amount: product.post_details.amount ?? '',
+                images: product.images || [], // Set existing images
+            });
+        }
+    }, [product]);
 
     const handleChange = (name, value) => {
         setFormData({
@@ -51,66 +72,17 @@ const AddShopOffices = ({ route }) => {
     };
 
     const handleSubmit = async () => {
-        const formDataToSend = new FormData();
-        Object.keys(formData).forEach((key) => {
-            if (key === 'images') {
-                formData.images.forEach((imageUri, index) => {
-                    formDataToSend.append('images[]', {
-                        uri: imageUri,
-                        type: 'image/jpeg',
-                        name: `image_${index}.jpg`,
-                    });
-                });
-            } else {
-                formDataToSend.append(key, formData[key]);
-            }
-        });
-
-        formDataToSend.append('category_id', subcategory.id);
-        formDataToSend.append('guard_name', subcategory.guard_name);
-        formDataToSend.append('post_type', 'sell');
-        formDataToSend.append('address', 'India');
-        console.log(formDataToSend);
-        try {
-            const response = await fetch(`${BASE_URL}/posts`, {
-                method: 'POST',
-                body: formDataToSend,
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${TOKEN}`
-                },
+        submitForm(formData, subcategory)  // Use the centralized function
+            .then((response) => {
+                console.log('Form submitted successfully', response);
+            })
+            .catch((error) => {
+                console.error('Error submitting form', error);
             });
-
-            const responseData = await response.json();
-            console.log(responseData);
-            if (response.ok) {
-                Dialog.show({
-                    type: ALERT_TYPE.SUCCESS,
-                    title: 'Success',
-                    textBody: 'Details submitted successfully!',
-                    button: 'close',
-                });
-            } else {
-                Dialog.show({
-                    type: ALERT_TYPE.WARNING,
-                    title: 'Validation Error',
-                    textBody: responseData.message,
-                    button: 'close',
-                });
-            }
-        } catch (error) {
-            Dialog.show({
-                type: ALERT_TYPE.WARNING,
-                title: 'Error',
-                textBody: 'There was an issue submitting the form.',
-                button: 'close',
-            });
-        }
     };
 
     return (
-        <AlertNotificationRoot>
+        <>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
@@ -275,7 +247,7 @@ const AddShopOffices = ({ route }) => {
                     <Button title="Submit" onPress={handleSubmit} />
                 </View>
             </KeyboardAvoidingView>
-        </AlertNotificationRoot>
+        </>
     );
 };
 

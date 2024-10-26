@@ -5,10 +5,7 @@ import SubCategoryPanel from './SubCategoryPanel';
 import { useNavigation } from '@react-navigation/native';
 import BottomNavBar from './BottomNavBar';
 import { BASE_URL, TOKEN } from '@env';
-
-const base_url = BASE_URL;
-const token = TOKEN;
-
+const Token = TOKEN;
 const ProductAddPage = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -18,9 +15,9 @@ const ProductAddPage = () => {
   // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
-      const apiUrl = `${base_url}/category`;
+      const apiUrl = `${BASE_URL}/category`;
       const myHeaders = new Headers();
-      myHeaders.append("Authorization", `Bearer ${token}`);
+      myHeaders.append("Authorization", `Bearer ${Token}`);
 
       const requestOptions = {
         method: "GET",
@@ -31,6 +28,7 @@ const ProductAddPage = () => {
       try {
         const response = await fetch(apiUrl, requestOptions);
         const data = await response.json();
+        console.log(data);
         setCategories(data.categories);
       } catch (error) {
         console.error('Error fetching categories:', error);

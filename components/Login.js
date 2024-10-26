@@ -49,9 +49,13 @@ const Login = () => {
          console.log(data);
 
          if (response.ok) {
+            console.log('user', data.user.id);
             // Save the auth_token to AsyncStorage
             await AsyncStorage.setItem('authToken', data.token);
-
+            await AsyncStorage.setItem('userId', data.user.id); // Storing as string
+            await AsyncStorage.setItem('name', data.user.name);
+            // await AsyncStorage.setItem('email', data.user.email);
+            await AsyncStorage.setItem('phoneNo', data.user.phone_no);
             // Update login state
             setIsLoggedIn(true);
 
@@ -65,7 +69,7 @@ const Login = () => {
             });
          }
       } catch (error) {
-
+         console.log(error);
          Dialog.show({
             type: ALERT_TYPE.WARNING,
             title: 'Error!!',

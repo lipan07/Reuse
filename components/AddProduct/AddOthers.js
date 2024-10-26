@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Dialog, AlertNotificationRoot, ALERT_TYPE } from 'react-native-alert-notification';
-import { BASE_URL, TOKEN } from '@env';
+import { submitForm } from '../../service/apiService';
 
 const AddOthers = ({ route }) => {
   const { category, subcategory, product } = route.params; // Get product for editing
@@ -15,12 +14,12 @@ const AddOthers = ({ route }) => {
 
   useEffect(() => {
     if (product) {
-      console.log(product);
       // Populate form fields with existing product data
       setFormData({
-        adTitle: product.post_details.title,
-        description: product.post_details.description,
-        amount: product.post_details.amount,
+        id: product.id,
+        adTitle: product.post_details.title ?? '',
+        description: product.post_details.description ?? '',
+        amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
       });
     }
@@ -50,68 +49,17 @@ const AddOthers = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (key === 'images') {
-        formData.images.forEach((imageUri, index) => {
-          formDataToSend.append('images[]', {
-            uri: imageUri,
-            type: 'image/jpeg',
-            name: `image_${index}.jpg`,
-          });
-        });
-      } else {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
-
-    formDataToSend.append('category_id', subcategory.id);
-    formDataToSend.append('guard_name', subcategory.guard_name);
-    formDataToSend.append('post_type', 'sell');
-    formDataToSend.append('address', 'India');
-
-    try {
-      const apiUrl = product ? `${BASE_URL}/posts/${product.id}` : `${BASE_URL}/posts`; // Determine URL for edit or create
-      const method = product ? 'PUT' : 'POST'; // Use PUT for update
-
-      const response = await fetch(apiUrl, {
-        method: method,
-        body: formDataToSend,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${TOKEN}`
-        },
+    submitForm(formData, subcategory)  // Use the centralized function
+      .then((response) => {
+        console.log('Form submitted successfully', response);
+      })
+      .catch((error) => {
+        console.error('Error submitting form', error);
       });
-
-      const responseData = await response.json();
-      if (response.ok) {
-        Dialog.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Success',
-          textBody: product ? 'Product updated successfully!' : 'Product added successfully!',
-          button: 'close',
-        });
-      } else {
-        Dialog.show({
-          type: ALERT_TYPE.WARNING,
-          title: 'Validation Error',
-          textBody: responseData.message,
-          button: 'close',
-        });
-      }
-    } catch (error) {
-      Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Error',
-        textBody: 'There was an issue submitting the form.',
-        button: 'close',
-      });
-    }
   };
 
   return (
-    <AlertNotificationRoot>
+    <>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -167,7 +115,7 @@ const AddOthers = ({ route }) => {
           <Button title={product ? "Update" : "Submit"} onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </AlertNotificationRoot>
+    </>
   );
 };
 

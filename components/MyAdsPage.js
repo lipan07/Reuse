@@ -4,9 +4,6 @@ import BottomNavBar from './BottomNavBar';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import the icon library
 import { BASE_URL, TOKEN } from '@env';
 
-const base_url = BASE_URL;
-const token = TOKEN;
-
 const MyAdsPage = ({ navigation }) => {
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,9 +22,9 @@ const MyAdsPage = ({ navigation }) => {
 
   const fetchProducts = async (page, reset = false) => {
     setIsLoading(true);
-    const apiUrl = `${base_url}/my-post?page=${page}`;
+    const apiUrl = `${BASE_URL}/my-post?page=${page}`;
     const myHeaders = new Headers();
-    myHeaders.append("Authorization", 'Bearer ' + token);
+    myHeaders.append("Authorization", 'Bearer ' + TOKEN);
 
     const requestOptions = {
       method: "GET",

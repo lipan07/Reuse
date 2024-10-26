@@ -1,156 +1,266 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Keyboard, ScrollView, KeyboardAvoidingView, StyleSheet } from 'react-native';
-import BottomNavBar from './BottomNavBar';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  Platform,
+  ScrollView,
+  KeyboardAvoidingView,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Pusher from 'pusher-js/react-native';
+import { addEventListener, removeEventListener } from 'react-native-event-listeners';
+import { BASE_URL, PUSHER_KEY, PUSHER_CLUSTER } from '@env';
 
-const ChatBox = () => {
-  const navigation = useNavigation();
-  const inputRef = useRef(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [showMessageOptions, setShowMessageOptions] = useState(false);
+const pusher = new Pusher(PUSHER_KEY, {
+  cluster: PUSHER_CLUSTER,
+  encrypted: true
+});
+
+
+const ChatBox = ({ route }) => {
+  const { sellerId, buyerId, postId, chatId: existingChatId } = route.params;
+  const [chatId, setChatId] = useState(existingChatId || null);
   const [chatHistory, setChatHistory] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [loggedInUserId, setLoggedInUserId] = useState(null);
+  const [showMessageOptions, setShowMessageOptions] = useState(false);
+  const [channel, setChannel] = useState(null);
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
-      setKeyboardHeight(event.endCoordinates.height);
-      setShowMessageOptions(true);
-    });
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0);
-      setShowMessageOptions(false);
-    });
+    if (chatId) {
+      const subscribedChannel = pusher.subscribe(`chat.${chatId}`);
+      subscribedChannel.bind('App\\Events\\MessageSent', (data) => {
+        setChatHistory(prev => [...prev, data]);
+      });
 
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
+      setChannel(subscribedChannel);
+
+      return () => {
+        subscribedChannel.unbind_all();
+        subscribedChannel.unsubscribe();
+      };
+    }
+  }, [chatId]);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const userId = await AsyncStorage.getItem('userId');
+      setLoggedInUserId(userId);
     };
+    fetchUserId();
   }, []);
 
-  const handleMessageOption = (message) => {
-    const updatedChatHistory = [...chatHistory, { id: chatHistory.length + 1, message }];
-    setChatHistory(updatedChatHistory);
-  };
+  useEffect(() => {
+    if (chatId) {
+      fetchChatMessages(chatId);
+    } else {
+      openChat(sellerId, buyerId, postId);
+    }
+  }, [chatId]);
 
-  const handleSend = () => {
-    if (inputText.trim() !== '') {
-      const updatedChatHistory = [...chatHistory, { id: chatHistory.length + 1, message: inputText }];
-      setChatHistory(updatedChatHistory);
-      setInputText(''); // Clear input after sending
+  const fetchChatMessages = async (id) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/chats/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      setChatHistory(data.chats);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
     }
   };
 
-  const handleDismissKeyboard = () => {
-    Keyboard.dismiss();
+  const openChat = async (sellerId, buyerId, postId) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/open-chat`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ seller_id: sellerId, buyer_id: buyerId, post_id: postId }),
+      });
+      const data = await response.json();
+      setChatId(data.chat.id);
+      setChatHistory(data.messages);
+    } catch (error) {
+      console.error("Error opening chat:", error);
+    }
   };
 
-  const handleProductPress = (productId) => {
-    navigation.navigate('ProductDetails', { productId });
+  const handleSend = async (message) => {
+    message = message.trim();
+    if (!message) return;
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/send-message`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ chat_id: chatId, message: message }),
+      });
+      const data = await response.json();
+      // setChatHistory((prev) => [...prev, { message: message, user_id: loggedInUserId }]);
+      setInputText('');
+      setShowMessageOptions(false);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
+  const handleMessageOption = (message) => {
+    if (message.trim()) {
+      handleSend(message);
+    }
+  };
+
+  const handleMessageText = () => {
+    handleSend(inputText); // Pass the input text value to handleSend
+  };
+
+  const handleFocus = () => {
+    setShowMessageOptions(true);
   };
 
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={handleDismissKeyboard}>
-      <ScrollView style={styles.chatHistory} contentContainerStyle={{ paddingBottom: 20 }}>
-        {chatHistory.map((chat) => (
-          <Text key={chat.id} style={styles.chatMessage}>{chat.message}</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 100}
+    >
+      <ScrollView contentContainerStyle={styles.chatHistory} keyboardShouldPersistTaps='handled'>
+        {chatHistory.map((message, index) => (
+          <View
+            key={index}
+            style={[
+              styles.messageContainer,
+              message.user_id === loggedInUserId ? styles.messageRight : styles.messageLeft,
+            ]}
+          >
+            <Text style={styles.messageText}>{message.message}</Text>
+          </View>
         ))}
       </ScrollView>
-      <View style={[styles.footer, { paddingBottom: keyboardHeight }]}>
+
+      {showMessageOptions && (
         <View style={styles.messageOptionsContainer}>
-          {showMessageOptions && (
-            <View style={styles.messageOptions}>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available')}>
-                <Text style={styles.messageOption}>Is it available?</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available')}>
-                <Text style={styles.messageOption}>What is the last price?</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available')}>
-                <Text style={styles.messageOption}>Is it negotiable?</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available')}>
-                <Text style={styles.messageOption}>Your phone no?</Text>
-              </TouchableOpacity>
-              {/* Add other message options similarly */}
-            </View>
-          )}
-        </View>
-        <View style={styles.inputSection}>
-          <TouchableOpacity onPress={() => inputRef.current?.focus()} style={styles.inputContainer}>
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              placeholder="Type a message..."
-              value={inputText}
-              onChangeText={(text) => setInputText(text)}
-              onFocus={() => setShowMessageOptions(true)}
-              onBlur={() => setShowMessageOptions(false)}
-            />
+          <TouchableOpacity style={styles.messageOption} onPress={() => handleMessageOption('Is it available?')}>
+            <Text style={styles.messageOptionText}>Is it available?</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-            <Text style={styles.sendButtonText}>Send</Text>
+          <TouchableOpacity style={styles.messageOption} onPress={() => handleMessageOption('What is the last price?')}>
+            <Text style={styles.messageOptionText}>What is the last price?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.messageOption} onPress={() => handleMessageOption('Is it negotiable?')}>
+            <Text style={styles.messageOptionText}>Is it negotiable?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.messageOption} onPress={() => handleMessageOption('Your phone number?')}>
+            <Text style={styles.messageOptionText}>Your phone number?</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      <View style={[styles.footer, Platform.OS === 'ios' && { marginBottom: 20 }]}>
+        <TextInput
+          style={styles.input}
+          value={inputText}
+          onFocus={handleFocus}
+          onChangeText={setInputText}
+          placeholder="Type a message..."
+        />
+        <TouchableOpacity style={styles.sendButton} onPress={handleMessageText}>
+          <Text style={styles.sendButtonText}>Send</Text>
+        </TouchableOpacity>
       </View>
-      <BottomNavBar navigation={navigation} />
-    </TouchableOpacity>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  chatHistory: {
-    flex: 1,
+  container: { flex: 1 },
+  chatHistory: { padding: 20 },
+  messageContainer: {
+    maxWidth: '80%',
     padding: 10,
+    borderRadius: 10,
+    marginVertical: 5,
   },
-  chatMessage: {
-    fontSize: 16,
-    marginBottom: 10,
+  messageLeft: {
+    backgroundColor: '#89bed6',
+    alignSelf: 'flex-start',
   },
-  footer: {
-    flexDirection: 'column',
-    borderTopWidth: 1,
-    borderTopColor: '#CCCCCC',
-    padding: 10,
-    marginBottom: 80,
+  messageRight: {
+    backgroundColor: '#007AFF',
+    alignSelf: 'flex-end',
+  },
+  messageText: {
+    color: '#fff',
   },
   messageOptionsContainer: {
-    maxHeight: 100,
-    overflow: 'hidden',
-  },
-  messageOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+    backgroundColor: '#f1f1f1',
+    borderTopWidth: 1,
+    borderColor: '#ccc',
   },
   messageOption: {
-    padding: 5,
+    backgroundColor: '#e1e1e1',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 15,
     margin: 5,
-    borderWidth: 1,
-    borderRadius: 5,
-    borderColor: '#CCCCCC',
-    backgroundColor: '#F5F5F5',
-  },
-  inputSection: {
-    flexDirection: 'row',
+    width: '45%',
     alignItems: 'center',
   },
-  inputContainer: {
-    flex: 1,
+  messageOptionText: {
+    color: '#007AFF',
+    fontSize: 14,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#f8f9fa',
   },
   input: {
+    flex: 1,
     borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 5,
-    padding: 10,
+    borderColor: '#ccc',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: '#fff',
   },
   sendButton: {
-    marginLeft: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#007AFF',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sendButtonText: {
-    color: '#007AFF',
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 

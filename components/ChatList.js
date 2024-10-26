@@ -1,32 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import BottomNavBar from './BottomNavBar';
-
-// Example chat data (replace this with your actual chat data)
-const chatData = [
-  { id: '1', user: 'Shalom', message: 'Hi there!' },
-  { id: '2', user: 'Nosson', message: 'Hello!' },
-  { id: '3', user: 'John', message: 'Hello!' },
-  { id: '4', user: 'Mohsin', message: 'Hello!' },
-  { id: '5', user: 'Ari', message: 'Hello!' },
-  // More chat items...
-];
+import { BASE_URL } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ChatList = ({ navigation }) => {
   const [chats, setChats] = useState([]);
 
   useEffect(() => {
-    // Fetch or set your chat data here
-    setChats(chatData); // For example, setting chat data from state
+    getAllChat();
   }, []);
 
-  const renderChatItem = ({ item }) => (
+  const getAllChat = async () => {
+    const token = await AsyncStorage.getItem('authToken');
+    try {
+      const response = await fetch(`${BASE_URL}/chats`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      // c // Log to verify data structure
+      setChats(data.chats);
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    }
+  };
+
+  const renderChatItem = ({ item: chat }) => (
     <TouchableOpacity
       style={styles.chatItem}
-      onPress={() => navigation.navigate('ChatBox', { chatId: item.id })}
+      onPress={() => {
+        // If chatId exists, navigate using chatId, otherwise pass seller_id, buyer_id, and post_id
+        navigation.navigate('ChatBox', {
+          chatId: chat.id,
+          sellerId: chat.seller_id,
+          buyerId: chat.buyer_id,
+          postId: chat.post_id,
+        });
+      }}
     >
-      <Text style={styles.userName}>{item.user}</Text>
-      <Text style={styles.message}>{item.message}</Text>
+      <Text style={styles.userName}>{chat.post.post_details.title}</Text>
+      <Text>{chat.buyer.name}</Text>
+      {/* <Text>{chat.seller_id}</Text> */}
+      <Text>{chat.post.address}</Text>
     </TouchableOpacity>
   );
 
@@ -35,7 +55,7 @@ const ChatList = ({ navigation }) => {
       <FlatList
         data={chats}
         renderItem={renderChatItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(chat) => chat.id}
         contentContainerStyle={styles.chatList}
       />
       <BottomNavBar />
