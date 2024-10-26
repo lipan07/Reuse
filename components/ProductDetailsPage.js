@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from 'react-native-maps';
 import BottomNavBar from './BottomNavBar';
 
 const ProductDetails = ({ route }) => {
     const { product } = route.params;
     const navigation = useNavigation();
+    const [isBuyerSellerSame, setIsBuyerSellerSame] = useState(false);
+
+    useEffect(() => {
+        const fetchBuyerId = async () => {
+            const buyerId = await AsyncStorage.getItem('userId');
+            setIsBuyerSellerSame(buyerId === product.user_id);
+        };
+        fetchBuyerId();
+    }, [product.user_id]);
 
     const handleImagePress = (imageIndex) => {
         navigation.navigate('ImageViewer', { images: product.images, selectedImageIndex: imageIndex });
@@ -28,18 +38,24 @@ const ProductDetails = ({ route }) => {
         });
     };
 
-    const handleChatPress = () => {
-        // Assuming you have access to the current user's ID (buyer)
-        const buyerId = 'currentUserId'; // Replace with actual buyer's ID
-        const sellerId = product.user_id; // Assuming 'user_id' is the seller's ID
+    // const handleChatPress = () => {
+    //     // Assuming you have access to the current user's ID (buyer)
+    //     const buyerId = 'currentUserId'; // Replace with actual buyer's ID
+    //     const sellerId = product.user_id; // Assuming 'user_id' is the seller's ID
 
-        // Navigate to ChatBox and pass necessary parameters
-        navigation.navigate('ChatBox', {
-            productId: product.id,
-            sellerId: sellerId,
-            buyerId: buyerId,
-            productTitle: product.post_details.title,
-        });
+    //     // Navigate to ChatBox and pass necessary parameters
+    //     navigation.navigate('ChatBox', {
+    //         productId: product.id,
+    //         sellerId: sellerId,
+    //         buyerId: buyerId,
+    //         productTitle: product.post_details.title,
+    //     });
+    // };
+    const handleChatWithSeller = async () => {
+        const buyerId = await AsyncStorage.getItem('userId');
+        const sellerId = product.user_id;
+        const postId = product.id;
+        navigation.navigate('ChatBox', { sellerId, buyerId, postId });
     };
     return (
         <View style={styles.container}>
@@ -82,15 +98,17 @@ const ProductDetails = ({ route }) => {
                 </TouchableOpacity>
             </ScrollView>
 
-            {/* Chat and Call buttons */}
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.chatButton} onPress={handleChatPress}>
-                    <Text style={styles.buttonText}>Chat</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.callButton} onPress={handleCallPress}>
-                    <Text style={styles.buttonText}>Call</Text>
-                </TouchableOpacity>
-            </View>
+            {/* Conditionally render Chat and Call buttons */}
+            {!isBuyerSellerSame && (
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={styles.chatButton} onPress={handleChatWithSeller}>
+                        <Text style={styles.buttonText}>Chat</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.callButton} onPress={handleCallPress}>
+                        <Text style={styles.buttonText}>Call</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             {/* Bottom navigation bar */}
             <BottomNavBar />

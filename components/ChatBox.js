@@ -1,224 +1,266 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Keyboard, ScrollView, StyleSheet } from 'react-native';
-import BottomNavBar from './BottomNavBar';
-import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
-import Echo from 'laravel-echo';
-// import Pusher from 'pusher-js';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  Platform,
+  ScrollView,
+  KeyboardAvoidingView,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Pusher from 'pusher-js/react-native';
-import { BASE_URL, TOKEN, PUSHER_KEY, PUSHER_CLUSTER } from '@env';
+import { addEventListener, removeEventListener } from 'react-native-event-listeners';
+import { BASE_URL, PUSHER_KEY, PUSHER_CLUSTER } from '@env';
 
-const Token = TOKEN;
-const PusherKey = PUSHER_KEY;
-const PusherCluster = PUSHER_CLUSTER;
-const chatID = '9d3cdd00-e664-4468-9ac8-0cdc889d84bf';
+const pusher = new Pusher(PUSHER_KEY, {
+  cluster: PUSHER_CLUSTER,
+  encrypted: true
+});
 
-const headers = {
-  'Accept': 'application/json',
-  'Content-Type': 'multipart/form-data',
-  'Authorization': `Bearer ${Token}`,
-};
 
 const ChatBox = ({ route }) => {
-  const navigation = useNavigation();
-  const inputRef = useRef(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [showMessageOptions, setShowMessageOptions] = useState(false);
+  const { sellerId, buyerId, postId, chatId: existingChatId } = route.params;
+  const [chatId, setChatId] = useState(existingChatId || null);
   const [chatHistory, setChatHistory] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [loggedInUserId, setLoggedInUserId] = useState(null);
+  const [showMessageOptions, setShowMessageOptions] = useState(false);
+  const [channel, setChannel] = useState(null);
 
-  // Function to fetch chat messages
-  const fetchChatHistory = async () => {
-    console.log(`${BASE_URL}/chats/${chatID}`);
-    try {
-      const response = await fetch(`${BASE_URL}/chats/${chatID}`, {
-        method: 'GET',
-        headers: headers,
+  useEffect(() => {
+    if (chatId) {
+      const subscribedChannel = pusher.subscribe(`chat.${chatId}`);
+      subscribedChannel.bind('App\\Events\\MessageSent', (data) => {
+        setChatHistory(prev => [...prev, data]);
       });
 
-      const responseData = await response.json();
-      console.log(responseData);
-      setChatHistory(responseData.chats); // Set the chat history with the fetched messages
+      setChannel(subscribedChannel);
+
+      return () => {
+        subscribedChannel.unbind_all();
+        subscribedChannel.unsubscribe();
+      };
+    }
+  }, [chatId]);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const userId = await AsyncStorage.getItem('userId');
+      setLoggedInUserId(userId);
+    };
+    fetchUserId();
+  }, []);
+
+  useEffect(() => {
+    if (chatId) {
+      fetchChatMessages(chatId);
+    } else {
+      openChat(sellerId, buyerId, postId);
+    }
+  }, [chatId]);
+
+  const fetchChatMessages = async (id) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/chats/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      setChatHistory(data.chats);
     } catch (error) {
-      console.error('Failed to fetch chat history:', error);
+      console.error("Error fetching chat messages:", error);
     }
   };
 
-  // Initialize Laravel Echo with Pusher
-  useEffect(() => {
-    const echo = new Echo({
-      broadcaster: 'pusher',
-      client: new Pusher(PusherKey, {
-        cluster: PusherCluster,
-        encrypted: true,
-        authEndpoint: `${BASE_URL}/broadcasting/auth`,
-        auth: {
-          headers: {
-            Authorization: `Bearer ${Token}`,
-          },
+  const openChat = async (sellerId, buyerId, postId) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/open-chat`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-      }),
-    });
-    // Subscribe to the chat channel
-    const channel = echo.channel(`chat.${chatID}`); // Subscribe to the specific chat channel
-    channel.listen('MessageSent', (e) => {
-      // Add the received message to the chat history
-      setChatHistory((prevMessages) => [...prevMessages, e.message]);
-    });
+        body: JSON.stringify({ seller_id: sellerId, buyer_id: buyerId, post_id: postId }),
+      });
+      const data = await response.json();
+      setChatId(data.chat.id);
+      setChatHistory(data.messages);
+    } catch (error) {
+      console.error("Error opening chat:", error);
+    }
+  };
 
-    return () => {
-      // channel.unbind(); // Unsubscribe on cleanup
-      echo.disconnect(); // Disconnect Echo on component unmount
-    };
-  }, []);
-
-  // Handle sending a message
-  const handleSend = async () => {
-    if (inputText.trim() !== '') {
-      const formDataToSend = new FormData();
-      const messageData = {
-        chat_id: chatID, // Assuming chat_id is passed through navigation params
-        sender_id: '9d3afef1-d5fc-4ca3-ac68-c118be8b0661', // Assuming user_id is passed through navigation params
-        message: inputText,
-      };
-
-      // Set up your form data
-      formDataToSend.append('post_id', '9d3b02c8-34fc-4cd8-8464-1cdaf22cd4c8');
-      formDataToSend.append('sender_id', '9d3afef1-d5fc-4ca3-ac68-c118be8b0661'); // Use dynamic sender ID
-      formDataToSend.append('receiver_id', '9d3afef1-d5fc-4ca3-ac68-c118be8b0661'); // Update receiver ID
-      formDataToSend.append('message', inputText);
-
-      try {
-        const response = await fetch(`${BASE_URL}/chats`, {
-          method: 'POST',
-          body: formDataToSend,
-          headers: headers,
-        });
-
-        const responseData = await response.json();
-        console.log(responseData);
-
-        // Clear input after sending
-        setInputText('');
-      } catch (error) {
-        console.error('Failed to save message:', error);
-      }
+  const handleSend = async (message) => {
+    message = message.trim();
+    if (!message) return;
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await fetch(`${BASE_URL}/send-message`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ chat_id: chatId, message: message }),
+      });
+      const data = await response.json();
+      // setChatHistory((prev) => [...prev, { message: message, user_id: loggedInUserId }]);
+      setInputText('');
+      setShowMessageOptions(false);
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
 
   const handleMessageOption = (message) => {
-    setInputText(message); // Set the selected message option in the input field
+    if (message.trim()) {
+      handleSend(message);
+    }
   };
 
-  const handleDismissKeyboard = () => {
-    Keyboard.dismiss();
+  const handleMessageText = () => {
+    handleSend(inputText); // Pass the input text value to handleSend
   };
-  useEffect(() => {
-    fetchChatHistory();
-  }, []);
+
+  const handleFocus = () => {
+    setShowMessageOptions(true);
+  };
 
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={handleDismissKeyboard}>
-      <ScrollView style={styles.chatHistory} contentContainerStyle={{ paddingBottom: 20 }}>
-        {chatHistory.map((chat, index) => (
-          <Text key={index} style={styles.chatMessage}>{chat.message}</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 100}
+    >
+      <ScrollView contentContainerStyle={styles.chatHistory} keyboardShouldPersistTaps='handled'>
+        {chatHistory.map((message, index) => (
+          <View
+            key={index}
+            style={[
+              styles.messageContainer,
+              message.user_id === loggedInUserId ? styles.messageRight : styles.messageLeft,
+            ]}
+          >
+            <Text style={styles.messageText}>{message.message}</Text>
+          </View>
         ))}
       </ScrollView>
-      <View style={[styles.footer, { paddingBottom: keyboardHeight }]}>
+
+      {showMessageOptions && (
         <View style={styles.messageOptionsContainer}>
-          {showMessageOptions && (
-            <View style={styles.messageOptions}>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it available?')}>
-                <Text style={styles.messageOption}>Is it available?</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('What is the last price?')}>
-                <Text style={styles.messageOption}>What is the last price?</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('Is it negotiable?')}>
-                <Text style={styles.messageOption}>Is it negotiable?</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleMessageOption('Your phone number?')}>
-                <Text style={styles.messageOption}>Your phone number?</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-        <View style={styles.inputSection}>
-          <TouchableOpacity onPress={() => inputRef.current?.focus()} style={styles.inputContainer}>
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              placeholder="Type a message..."
-              value={inputText}
-              onChangeText={(text) => setInputText(text)}
-              onFocus={() => setShowMessageOptions(true)}
-              onBlur={() => setShowMessageOptions(false)}
-            />
+          <TouchableOpacity style={styles.messageOption} onPress={() => handleMessageOption('Is it available?')}>
+            <Text style={styles.messageOptionText}>Is it available?</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-            <Text style={styles.sendButtonText}>Send</Text>
+          <TouchableOpacity style={styles.messageOption} onPress={() => handleMessageOption('What is the last price?')}>
+            <Text style={styles.messageOptionText}>What is the last price?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.messageOption} onPress={() => handleMessageOption('Is it negotiable?')}>
+            <Text style={styles.messageOptionText}>Is it negotiable?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.messageOption} onPress={() => handleMessageOption('Your phone number?')}>
+            <Text style={styles.messageOptionText}>Your phone number?</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      <View style={[styles.footer, Platform.OS === 'ios' && { marginBottom: 20 }]}>
+        <TextInput
+          style={styles.input}
+          value={inputText}
+          onFocus={handleFocus}
+          onChangeText={setInputText}
+          placeholder="Type a message..."
+        />
+        <TouchableOpacity style={styles.sendButton} onPress={handleMessageText}>
+          <Text style={styles.sendButtonText}>Send</Text>
+        </TouchableOpacity>
       </View>
-      <BottomNavBar navigation={navigation} />
-    </TouchableOpacity>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  chatHistory: {
-    flex: 1,
+  container: { flex: 1 },
+  chatHistory: { padding: 20 },
+  messageContainer: {
+    maxWidth: '80%',
     padding: 10,
+    borderRadius: 10,
+    marginVertical: 5,
   },
-  chatMessage: {
-    fontSize: 16,
-    marginBottom: 10,
+  messageLeft: {
+    backgroundColor: '#89bed6',
+    alignSelf: 'flex-start',
   },
-  footer: {
-    flexDirection: 'column',
-    borderTopWidth: 1,
-    borderTopColor: '#CCCCCC',
-    padding: 10,
-    marginBottom: 80,
+  messageRight: {
+    backgroundColor: '#007AFF',
+    alignSelf: 'flex-end',
+  },
+  messageText: {
+    color: '#fff',
   },
   messageOptionsContainer: {
-    maxHeight: 100,
-    overflow: 'hidden',
-  },
-  messageOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+    backgroundColor: '#f1f1f1',
+    borderTopWidth: 1,
+    borderColor: '#ccc',
   },
   messageOption: {
-    padding: 5,
+    backgroundColor: '#e1e1e1',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 15,
     margin: 5,
-    borderWidth: 1,
-    borderRadius: 5,
-    borderColor: '#CCCCCC',
-    backgroundColor: '#F5F5F5',
-  },
-  inputSection: {
-    flexDirection: 'row',
+    width: '45%',
     alignItems: 'center',
   },
-  inputContainer: {
-    flex: 1,
+  messageOptionText: {
+    color: '#007AFF',
+    fontSize: 14,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#f8f9fa',
   },
   input: {
+    flex: 1,
     borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 5,
-    padding: 10,
+    borderColor: '#ccc',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: '#fff',
   },
   sendButton: {
-    marginLeft: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#007AFF',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sendButtonText: {
-    color: '#007AFF',
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 
