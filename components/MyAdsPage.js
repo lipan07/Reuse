@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
 import BottomNavBar from './BottomNavBar';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import the icon library
-import { BASE_URL, TOKEN } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@env';
 
 const MyAdsPage = ({ navigation }) => {
   const [products, setProducts] = useState([]);
@@ -21,10 +22,11 @@ const MyAdsPage = ({ navigation }) => {
   };
 
   const fetchProducts = async (page, reset = false) => {
+    const token = await AsyncStorage.getItem('authToken');
     setIsLoading(true);
     const apiUrl = `${BASE_URL}/my-post?page=${page}`;
     const myHeaders = new Headers();
-    myHeaders.append("Authorization", 'Bearer ' + TOKEN);
+    myHeaders.append("Authorization", `Bearer ${token}`);
 
     const requestOptions = {
       method: "GET",

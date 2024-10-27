@@ -4,8 +4,9 @@ import ParentCategoryPanel from './ParentCategoryPanel';
 import SubCategoryPanel from './SubCategoryPanel';
 import { useNavigation } from '@react-navigation/native';
 import BottomNavBar from './BottomNavBar';
-import { BASE_URL, TOKEN } from '@env';
-const Token = TOKEN;
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@env';
+
 const ProductAddPage = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -15,9 +16,10 @@ const ProductAddPage = () => {
   // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
+      const token = await AsyncStorage.getItem('authToken');
       const apiUrl = `${BASE_URL}/category`;
       const myHeaders = new Headers();
-      myHeaders.append("Authorization", `Bearer ${Token}`);
+      myHeaders.append("Authorization", `Bearer ${token}`);
 
       const requestOptions = {
         method: "GET",

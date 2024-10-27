@@ -1,8 +1,9 @@
-import { BASE_URL, TOKEN } from '@env';
+import { BASE_URL } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
-const Token = TOKEN;
 
 export const submitForm = async (formData, subcategory) => {
+    const token = await AsyncStorage.getItem('authToken');
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
         if (key === 'images') {
@@ -36,7 +37,7 @@ export const submitForm = async (formData, subcategory) => {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'multipart/form-data',
-                'Authorization': `Bearer ${Token}`
+                'Authorization': `Bearer ${token}`
             },
         });
 

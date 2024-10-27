@@ -3,7 +3,8 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
-import { BASE_URL, TOKEN } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@env';
 
 const AddBycycles = ({ route }) => {
   const { category, subcategory, product } = route.params;
@@ -55,12 +56,13 @@ const AddBycycles = ({ route }) => {
 
   useEffect(() => {
     const getBycycleBrand = async () => {
+      const token = await AsyncStorage.getItem('authToken');
       try {
         const response = await fetch(`${BASE_URL}/bycycle/brand`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${TOKEN}`
+            'Authorization': `Bearer ${token}`
           },
         });
         const responseData = await response.json();

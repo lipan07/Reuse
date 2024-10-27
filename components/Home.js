@@ -5,8 +5,8 @@ import CategoryMenu from './CategoryMenu';
 import BottomNavBar from './BottomNavBar';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL, TOKEN } from '@env';
-const Token = TOKEN;
+import { BASE_URL } from '@env';
+
 const Home = ({ navigation }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [products, setProducts] = useState([]);
@@ -21,6 +21,7 @@ const Home = ({ navigation }) => {
 
   // Function to fetch products
   const fetchProducts = async (page, category, reset = false) => {
+    const token = await AsyncStorage.getItem('authToken');
     if (isLoading) return; // Avoid multiple requests while one is in progress
 
     setIsLoading(true);
@@ -28,7 +29,7 @@ const Home = ({ navigation }) => {
     console.log(apiUrl);
     const requestOptions = {
       method: 'GET',
-      headers: { Authorization: `Bearer ${TOKEN}` },
+      headers: { Authorization: `Bearer ${token}` },
     };
 
     try {

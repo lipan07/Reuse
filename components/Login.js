@@ -4,7 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
 import { useNavigation } from '@react-navigation/native';
-import { BASE_URL, TOKEN } from '@env';
+import { BASE_URLßßß } from '@env';
 
 const Login = () => {
    const [isLoggedIn, setIsLoggedIn] = useState(false);
