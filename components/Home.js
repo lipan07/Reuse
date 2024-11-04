@@ -5,7 +5,6 @@ import CategoryMenu from './CategoryMenu';
 import BottomNavBar from './BottomNavBar';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@env';
 
 const Home = ({ navigation }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -14,18 +13,19 @@ const Home = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [search, setSearch] = useState(null);
   const [showMenu, setShowMenu] = useState(true); // State to control CategoryMenu visibility
   const [refreshing, setRefreshing] = useState(false); // State for pull-to-refresh
 
   const lastScrollY = useRef(0); // Track the last scroll position
 
   // Function to fetch products
-  const fetchProducts = async (page, category, reset = false) => {
+  const fetchProducts = async (page, category, reset = false, search = null) => {
     const token = await AsyncStorage.getItem('authToken');
     if (isLoading) return; // Avoid multiple requests while one is in progress
 
     setIsLoading(true);
-    const apiUrl = `${BASE_URL}/posts?page=${page}${category ? `&category=${category}` : ''}`;
+    const apiUrl = `${process.env.BASE_URL}/posts?page=${page}${category ? `&category=${category}` : ''}${search ? `&search=${search}` : ''}`;
     console.log(apiUrl);
     const requestOptions = {
       method: 'GET',
@@ -121,6 +121,15 @@ const Home = ({ navigation }) => {
     fetchProducts(1, categoryId, true);
   };
 
+  const handleInputChange = (text) => {
+    setSearch(text);
+  };
+
+  // Handler to execute when search is performed
+  const handleSearchPress = () => {
+    console.log('Searching for:', search);
+    fetchProducts(1, null, true, search);
+  };
 
   // Render each product item in the FlatList
   const renderProductItem = ({ item }) => (
@@ -135,7 +144,7 @@ const Home = ({ navigation }) => {
           ))}
         </Swiper>
       </View>
-      <Text style={styles.productName}>{item.post_details.title}</Text>
+      <Text style={styles.productName}>{item.title}</Text>
       <Text style={styles.details} numberOfLines={2} ellipsizeMode="tail">
         {item.post_details.description}
       </Text>
@@ -147,8 +156,8 @@ const Home = ({ navigation }) => {
     <View style={styles.container}>
 
       <View style={styles.searchBar}>
-        <TextInput style={styles.searchInput} placeholder="Search..." />
-        <TouchableOpacity style={styles.searchButton}>
+        <TextInput style={styles.searchInput} onChangeText={handleInputChange} value={search} placeholder="Search..." />
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
           <Text style={styles.buttonText}>Search</Text>
         </TouchableOpacity>
       </View>
@@ -198,7 +207,13 @@ const styles = StyleSheet.create({
   searchButton: { backgroundColor: '#007bff', justifyContent: 'center', paddingHorizontal: 15, borderRadius: 5, marginLeft: 10 },
   buttonText: { color: '#fff', fontSize: 16, textAlign: 'center' },
   productList: { paddingHorizontal: 5, paddingBottom: 60 },
-  productItem: { flex: 1, margin: 5, borderRadius: 5, borderWidth: 1, borderColor: '#CCCCCC', padding: 10, alignItems: 'center', backgroundColor: '#F9F9F9' },
+  productItem: {
+    flex: 1, margin: 5, borderRadius: 5, borderWidth: 0.4, borderColor: 'yellow', padding: 10, alignItems: 'center', backgroundColor: '#F9F9F9', shadowColor: '#565656',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 10
+  },
   imageContainer: { height: 120, width: '100%', borderRadius: 5, overflow: 'hidden', marginBottom: 8 },
   swiper: { height: '100%' },
   productImage: { width: '100%', height: '100%', resizeMode: 'cover' },

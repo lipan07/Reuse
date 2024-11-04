@@ -1,16 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import BottomNavBar from './BottomNavBar';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import the icon library
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@env';
+import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
 
 const MyAdsPage = ({ navigation }) => {
   const [products, setProducts] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isPopupVisible, setPopupVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    const token = await AsyncStorage.getItem('authToken');
+    try {
+      const response = await fetch(`${process.env.BASE_URL}/my-post`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const jsonResponse = await response.json();
+      setProducts(jsonResponse.data || []);
+    } catch (error) {
+      console.error("Failed to load products", error);
+      Dialog.show({
+        type: ALERT_TYPE.ERROR,
+        title: 'Error',
+        textBody: 'Failed to load products.',
+        button: 'Try again',
+        onPressButton: fetchProducts,
+      });
+    }
+  };
+
+  const deleteProduct = async () => {
+    const token = await AsyncStorage.getItem('authToken');
+    try {
+      const response = await fetch(`${process.env.BASE_URL}/posts/${selectedProduct.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        setProducts(products.filter(item => item.id !== selectedProduct.id));
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Post deleted successfully.',
+          button: 'OK',
+        });
+      } else {
+        throw new Error('Failed to delete the post');
+      }
+    } catch (error) {
+      console.error("Delete failed", error);
+      Dialog.show({
+        type: ALERT_TYPE.ERROR,
+        title: 'Error',
+        textBody: 'Failed to delete the post.',
+        button: 'Try again',
+      });
+    }
+  };
 
   const showPopup = (item) => {
     setSelectedProduct(item);
@@ -21,49 +79,6 @@ const MyAdsPage = ({ navigation }) => {
     setPopupVisible(false);
   };
 
-  const fetchProducts = async (page, reset = false) => {
-    const token = await AsyncStorage.getItem('authToken');
-    setIsLoading(true);
-    const apiUrl = `${BASE_URL}/my-post?page=${page}`;
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", `Bearer ${token}`);
-
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
-
-    try {
-      const response = await fetch(apiUrl, requestOptions);
-      const jsonResponse = await response.json();
-      if (page == 1) {
-        setProducts([]);
-      }
-
-      if (reset) {
-        setProducts(jsonResponse.data);
-      } else {
-        setProducts(prevProducts => [...prevProducts, ...jsonResponse.data]);
-      }
-
-      setCurrentPage(page);
-    } catch (error) {
-      console.error("Failed to load products", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts(currentPage);
-  }, []);
-
-  const handleScrollEndReached = () => {
-    if (!isLoading) {
-      fetchProducts(currentPage + 1);
-    }
-  };
   const categoryComponentMap = {
     'cars': 'AddCarForm',
     'houses_apartments': 'AddHousesApartments',
@@ -145,7 +160,7 @@ const MyAdsPage = ({ navigation }) => {
     <TouchableOpacity style={styles.productItem} onPress={() => showPopup(item)}>
       <Image source={{ uri: item.images[0] }} style={styles.productImage} />
       <View style={styles.productDetails}>
-        <Text style={styles.productName}>{item.post_details.title}</Text>
+        <Text style={styles.productName}>{item.title}</Text>
         <Text style={styles.productDesc}>{item.post_details.description}</Text>
         <Text style={styles.price}>Price: ${item.post_details.amount}</Text>
       </View>
@@ -160,8 +175,6 @@ const MyAdsPage = ({ navigation }) => {
         renderItem={renderProductItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.productList}
-        onEndReached={handleScrollEndReached}
-        onEndReachedThreshold={0.1}
       />
       <BottomNavBar navigation={navigation} />
       <Modal visible={isPopupVisible} transparent={true} animationType="slide">
@@ -181,12 +194,12 @@ const MyAdsPage = ({ navigation }) => {
                 }}>
                   <Text style={styles.popupOption}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {/* Delete functionality */ }}>
+                <TouchableOpacity onPress={() => {
+                  deleteProduct();
+                  hidePopup();
+                }}>
                   <Text style={styles.popupOption}>Delete</Text>
                 </TouchableOpacity>
-                {/* <TouchableOpacity onPress={hidePopup}>
-            <Text style={styles.popupOptionClose}>Close</Text>
-          </TouchableOpacity> */}
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -227,9 +240,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   productDesc: {
-    // fontWeight: 'bold',
     fontSize: 15,
-    color: 'grey'
+    color: 'grey',
   },
   price: {
     fontSize: 14,
@@ -261,12 +273,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     fontSize: 16,
     textAlign: 'center',
-  },
-  popupOptionClose: {
-    marginVertical: 10,
-    fontSize: 16,
-    textAlign: 'center',
-    color: 'red',
   },
 });
 

@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@env';
 
 const AddScooters = ({ route }) => {
   const { category, subcategory, product } = route.params;
@@ -27,7 +26,7 @@ const AddScooters = ({ route }) => {
         brand: product.post_details.brand ?? '',
         year: product.post_details.year ?? '',
         km_driven: product.post_details.km_driven ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
@@ -62,7 +61,7 @@ const AddScooters = ({ route }) => {
     const getScooterBrand = async () => {
       const token = await AsyncStorage.getItem('authToken');
       try {
-        const response = await fetch(`${BASE_URL}/scooter/brand`, {
+        const response = await fetch(`${process.env.BASE_URL}/scooter/brand`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',

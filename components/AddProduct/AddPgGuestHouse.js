@@ -29,7 +29,7 @@ const AddPgGuestHouse = ({ route }) => {
         carParking: product.post_details.car_parking ?? '',
         isMealIncluded: product.post_details.is_meal_included ?? '',
         carpetArea: product.post_details.carpet_area ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images

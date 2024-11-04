@@ -25,7 +25,7 @@ const AddJob = ({ route }) => {
         positionType: product.post_details.position_type ?? '',
         salaryFrom: product.post_details.salary_from ?? '',
         salaryTo: product.post_details.salary_to ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         images: product.images || [], // Set existing images
       });

@@ -18,7 +18,7 @@ const AddEducationClasses = ({ route }) => {
       setFormData({
         id: product.id,
         type: product.post_details.type ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         // amount: product.post_details.amount,
         images: product.images || [], // Set existing images

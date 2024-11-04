@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Modal, Image, StyleSheet, TouchableOpacity, Dimensions, Text, Animated } from 'react-native';
-import { GestureHandlerRootView, PanGestureHandler, PinchGestureHandler, State } from 'react-native-gesture-handler';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Modal, Image, StyleSheet, TouchableOpacity, Dimensions, Text, Animated, FlatList } from 'react-native';
+import { GestureHandlerRootView, PinchGestureHandler, State } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -8,85 +8,52 @@ const { width, height } = Dimensions.get('window');
 
 const ImageViewer = ({ route }) => {
     const { images, selectedImageIndex } = route.params;
-    const [currentIndex, setCurrentIndex] = useState(selectedImageIndex);
-    const [scale] = useState(new Animated.Value(1)); // Animated value for zoom scaling
-    const [lastScale, setLastScale] = useState(1); // For tracking the scale in zoom gestures
-    const [translateY] = useState(new Animated.Value(0)); // Only translate Y for swipe down
     const navigation = useNavigation();
+    const scales = useRef(images.map(() => new Animated.Value(1))); // Array of animated values for each image scale
+    const flatListRef = useRef(null);
 
-    // Handling swipe down
-    const handleSwipe = (event) => {
-        const { translationY } = event.nativeEvent;
-        Animated.timing(translateY, {
-            toValue: translationY > 200 ? height : 0,
-            duration: 300,
-            useNativeDriver: true,
-        }).start(() => {
-            if (translationY > 200) {
-                navigation.navigate('ProductDetailsPage'); // Navigate to product details on swipe down
-            }
-        });
-    };
-
-    // Pinch gesture event handler for zoom
-    const handlePinchGesture = Animated.event([{ nativeEvent: { scale: scale } }], {
-        useNativeDriver: true,
+    const handlePinchGesture = (index) => Animated.event([{ nativeEvent: { scale: scales.current[index] } }], {
+        useNativeDriver: true
     });
 
-    // Save the last scale factor after the pinch is complete
-    const handlePinchEnd = () => {
-        scale.flattenOffset(); // Flattens the animation offset to ensure smooth scaling
-        setLastScale(scale.__getValue()); // Store the final zoom scale
-    };
-
-    // Switch to the next image
-    const handleNext = () => {
-        setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
-    };
-
-    // Switch to the previous image
-    const handlePrevious = () => {
-        setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
-    };
+    // Ensure scales are reset when the user navigates to a new image
+    useEffect(() => {
+        scales.current.forEach(scale => scale.setValue(1));
+    }, [selectedImageIndex]);
 
     return (
         <GestureHandlerRootView style={styles.container}>
             <Modal animationType="slide" transparent={true} visible={true}>
                 <View style={styles.modalContainer}>
-                    {/* Pan Gesture for swipe down */}
-                    <PanGestureHandler
-                        onGestureEvent={Animated.event([{ nativeEvent: { translationY: handleSwipe } }], {
-                            useNativeDriver: false,
-                        })}
-                        onHandlerStateChange={(event) => {
-                            if (event.nativeEvent.state === State.END) handleSwipe(event);
+                    <FlatList
+                        ref={flatListRef}
+                        data={images}
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        onMomentumScrollEnd={ev => {
+                            const newIndex = Math.floor(ev.nativeEvent.contentOffset.x / width);
+                            if (newIndex !== selectedImageIndex) {
+                                scales.current[newIndex].setValue(1); // Reset scale on swipe to new image
+                            }
                         }}
-                    >
-                        <Animated.View style={[styles.imageContainer, { transform: [{ translateY }] }]}>
-                            {/* Pinch Gesture for zoom */}
-                            <PinchGestureHandler
-                                onGestureEvent={handlePinchGesture}
-                                onHandlerStateChange={(event) => {
-                                    if (event.nativeEvent.state === State.END) handlePinchEnd();
-                                }}
-                            >
-                                <Animated.Image
-                                    source={{ uri: images[currentIndex] }}
-                                    style={[styles.image, { transform: [{ scale: scale }] }]} // Apply zoom scaling
-                                    resizeMode="contain"
-                                />
-                            </PinchGestureHandler>
-                        </Animated.View>
-                    </PanGestureHandler>
-
-                    {/* Navigation buttons */}
-                    <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-                        <Ionicons name="arrow-forward" size={30} color="white" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
-                        <Ionicons name="arrow-back" size={30} color="white" />
-                    </TouchableOpacity>
-
+                        renderItem={({ item, index }) => (
+                            <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+                                <PinchGestureHandler
+                                    onGestureEvent={handlePinchGesture(index)}
+                                >
+                                    <Animated.View style={styles.imageContainer}>
+                                        <Animated.Image
+                                            source={{ uri: item }}
+                                            style={[styles.image, { transform: [{ scale: scales.current[index] }] }]}
+                                            resizeMode="contain"
+                                        />
+                                    </Animated.View>
+                                </PinchGestureHandler>
+                            </View>
+                        )}
+                        keyExtractor={(_, index) => String(index)}
+                    />
                     {/* Close button */}
                     <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
                         <Text style={styles.closeButtonText}>Close</Text>
@@ -105,8 +72,8 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         backgroundColor: 'black',
-        height: height,
-        width: width,
+        height: '100%',
+        width: '100%',
         justifyContent: 'center',
     },
     imageContainer: {
@@ -132,17 +99,8 @@ const styles = StyleSheet.create({
     },
     closeButtonText: {
         color: 'white',
+        fontSize: 16,
         textAlign: 'center',
-    },
-    nextButton: {
-        position: 'absolute',
-        top: '50%',
-        right: 20,
-    },
-    previousButton: {
-        position: 'absolute',
-        top: '50%',
-        left: 20,
     },
 });
 

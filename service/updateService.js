@@ -1,4 +1,3 @@
-import { BASE_URLß } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
 
@@ -22,10 +21,10 @@ export const updateForm = async (formData, subcategory) => {
     formDataToSend.append('guard_name', subcategory.guard_name);
     formDataToSend.append('post_type', 'sell');
     formDataToSend.append('address', 'India');
-    console.log(`${BASE_URL}/posts/${formData.id}`);
+    console.log(`${process.env.BASE_URL}/posts/${formData.id}`);
     const token = await AsyncStorage.getItem('authToken');
     try {
-        const response = await fetch(`${BASE_URL}/posts/${formData.id}`, {
+        const response = await fetch(`${process.env.BASE_URL}/posts/${formData.id}`, {
             method: 'PUT',
             body: formDataToSend,
             headers: {

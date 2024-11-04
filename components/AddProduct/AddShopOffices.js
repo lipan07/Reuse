@@ -35,7 +35,7 @@ const AddShopOffices = ({ route }) => {
                 maintenance: product.post_details.maintenance ?? '',
                 washroom: product.post_details.washroom ?? '',
                 projectName: product.post_details.project_name ?? '',
-                adTitle: product.post_details.title ?? '',
+                adTitle: product.title ?? '',
                 description: product.post_details.description ?? '',
                 amount: product.post_details.amount ?? '',
                 images: product.images || [], // Set existing images

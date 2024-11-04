@@ -20,7 +20,7 @@ const AddMobileTablets = ({ route }) => {
       setFormData({
         id: product.id,
         brand: product.post_details.brand ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images

@@ -32,7 +32,7 @@ const AddCommercialHeavyMachinery = ({ route }) => {
         condition: product.post_details.condition ?? '',
         owners: product.post_details.owner ?? '',
         listedBy: product.post_details.listed_by ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images

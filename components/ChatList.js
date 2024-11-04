@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import BottomNavBar from './BottomNavBar';
-import { BASE_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ChatList = ({ navigation }) => {
@@ -14,7 +13,7 @@ const ChatList = ({ navigation }) => {
   const getAllChat = async () => {
     const token = await AsyncStorage.getItem('authToken');
     try {
-      const response = await fetch(`${BASE_URL}/chats`, {
+      const response = await fetch(`${process.env.BASE_URL}/chats`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -43,7 +42,7 @@ const ChatList = ({ navigation }) => {
         });
       }}
     >
-      <Text style={styles.userName}>{chat.post.post_details.title}</Text>
+      <Text style={styles.userName}>{chat.post.title}</Text>
       <Text>{chat.buyer.name}</Text>
       {/* <Text>{chat.seller_id}</Text> */}
       <Text>{chat.post.address}</Text>

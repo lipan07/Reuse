@@ -12,10 +12,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Pusher from 'pusher-js/react-native';
 import { addEventListener, removeEventListener } from 'react-native-event-listeners';
-import { BASE_URL, PUSHER_KEY, PUSHER_CLUSTER } from '@env';
 
-const pusher = new Pusher(PUSHER_KEY, {
-  cluster: PUSHER_CLUSTER,
+const pusher = new Pusher(process.env.PUSHER_KEY, {
+  cluster: process.env.PUSHER_CLUSTER,
   encrypted: true
 });
 
@@ -36,6 +35,11 @@ const ChatBox = ({ route }) => {
         setChatHistory(prev => [...prev, data]);
       });
 
+      //Listening for status updates
+      subscribedChannel.bind('App\\Events\\MessageSeen', (data) => {
+        console.log('channel response - ', data);
+        updateMessageStatus(data.id);
+      });
       setChannel(subscribedChannel);
 
       return () => {
@@ -64,7 +68,7 @@ const ChatBox = ({ route }) => {
   const fetchChatMessages = async (id) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      const response = await fetch(`${BASE_URL}/chats/${id}`, {
+      const response = await fetch(`${process.env.BASE_URL}/chats/${id}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -82,7 +86,7 @@ const ChatBox = ({ route }) => {
   const openChat = async (sellerId, buyerId, postId) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      const response = await fetch(`${BASE_URL}/open-chat`, {
+      const response = await fetch(`${process.env.BASE_URL}/open-chat`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -104,7 +108,7 @@ const ChatBox = ({ route }) => {
     if (!message) return;
     try {
       const token = await AsyncStorage.getItem('authToken');
-      const response = await fetch(`${BASE_URL}/send-message`, {
+      const response = await fetch(`${process.env.BASE_URL}/send-message`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -136,6 +140,47 @@ const ChatBox = ({ route }) => {
     setShowMessageOptions(true);
   };
 
+  const handleSeeMessage = async (messageID) => {
+    const token = await AsyncStorage.getItem('authToken');
+    try {
+      console.log(`${process.env.BASE_URL}/messages/${messageID}/seen`);
+      const response = await fetch(`${process.env.BASE_URL}/messages/${messageID}/seen`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageID: messageID }),
+      });
+
+      updateMessageStatus(messageID);
+    } catch (error) {
+      console.error("Failed to mark message as seen:", error);
+    }
+  };
+
+  const updateMessageStatus = (messageId) => {
+    console.log(`Updating message ${messageId} to seen status 1`);
+    setChatHistory(prev => {
+      const newMessages = prev.map(msg =>
+        msg.id === messageId ? { ...msg, is_seen: 1 } : msg
+      );
+      console.log('newMessages - ', newMessages);
+      return newMessages;
+    });
+  };
+  useEffect(() => {
+    // Function to mark messages as seen
+    const markMessagesAsSeen = async () => {
+      // Find all messages that are not marked as seen
+      const unseenMessages = chatHistory.filter(msg => msg.user_id !== loggedInUserId && msg.is_seen !== 1);
+      unseenMessages.forEach(message => {
+        handleSeeMessage(message.id);
+      });
+    };
+
+    markMessagesAsSeen();
+  }, [chatHistory]);
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -152,6 +197,8 @@ const ChatBox = ({ route }) => {
             ]}
           >
             <Text style={styles.messageText}>{message.message}</Text>
+            {message.user_id === loggedInUserId && <MessageTick status={message.is_seen} />}
+            {/* {message.user_id !== loggedInUserId && message.is_seen !== 1 && handleSeeMessage(message.id)} */}
           </View>
         ))}
       </ScrollView>
@@ -187,6 +234,17 @@ const ChatBox = ({ route }) => {
       </View>
     </KeyboardAvoidingView>
   );
+};
+
+const MessageTick = ({ status }) => {
+  switch (status) {
+    // case 1:
+    //   return <Text style={styles.tickText}>✔✔</Text>;
+    case 1:
+      return <Text style={styles.tickTextBlue}>✔✔</Text>;
+    default:
+      return <Text style={styles.tickText}>✔</Text>;
+  }
 };
 
 const styles = StyleSheet.create({

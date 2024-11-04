@@ -1,4 +1,3 @@
-import { BASE_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
 
@@ -24,9 +23,9 @@ export const submitForm = async (formData, subcategory) => {
     formDataToSend.append('post_type', 'sell');
     formDataToSend.append('address', 'India');
 
-    var apiUrl = `${BASE_URL}/posts`;
+    var apiUrl = `${process.env.BASE_URL}/posts`;
     if (formData.id) {
-        apiUrl = `${BASE_URL}/posts/${formData.id}`;
+        apiUrl = `${process.env.BASE_URL}/posts/${formData.id}`;
     }
     console.log(apiUrl);
     console.log(formDataToSend);

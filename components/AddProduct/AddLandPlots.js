@@ -31,7 +31,7 @@ const AddLandPlots = ({ route }) => {
         breadth: product.post_details.breadth ?? '',
         projectName: product.post_details.project_name ?? '',
         facing: product.post_details.facing ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         images: product.images || [], // Set existing images
       });
