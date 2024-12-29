@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
 
 export const submitForm = async (formData, subcategory) => {
+    console.log(subcategory);
     const token = await AsyncStorage.getItem('authToken');
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {

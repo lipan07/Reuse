@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import { WebView } from 'react-native-webview';
+import MapView, { Circle } from 'react-native-maps'; // Import Circle for radius
 import { useNavigation } from '@react-navigation/native';
 
 const FullScreenMap = ({ route }) => {
@@ -12,64 +12,27 @@ const FullScreenMap = ({ route }) => {
         navigation.goBack();
     };
 
-    // HTML content for Leaflet map, using similar structure as in ProductDetails
-    // HTML content for Leaflet map with a larger marker
-    // HTML content for Leaflet map with a styled circle
-    const mapHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Full Screen Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        body, html, #map { height: 100%; margin: 0; padding: 0; }
-        .leaflet-circle-marker {
-            background-color: rgba(255, 0, 0, 0.5); /* Semi-transparent red */
-            border: 2px solid red; /* Red border */
-            border-radius: 50%; /* Circular shape */
-            width: 30px; /* Width of the circle */
-            height: 30px; /* Height of the circle */
-        }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        var map = L.map('map').setView([${latitude}, ${longitude}], 15); // Increased zoom level to 16
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        // Draw a circle with a 100 meter radius
-        var circle = L.circle([${latitude}, ${longitude}], {
-            color: '#a7b5aa', // Border color of the circle
-            fillColor: '#f03', // Fill color of the circle
-            fillOpacity: 0.2, // Transparency of the circle
-            radius: 200 // Radius in meters
-        }).addTo(map);
-
-        // circle.bindPopup("Big-Brain HQ Area").openPopup();
-    </script>
-</body>
-</html>
-`;
-
-
-
-
-
     return (
         <View style={styles.container}>
-            {/* WebView to render the Leaflet map */}
-            <WebView
-                originWhitelist={['*']}
-                source={{ html: mapHtml }}
+            {/* Google Map with only a radius circle */}
+            <MapView
                 style={styles.map}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-            />
+                provider="google"
+                initialRegion={{
+                    latitude: latitude,
+                    longitude: longitude,
+                    latitudeDelta: 0.02,
+                    longitudeDelta: 0.02,
+                }}
+            >
+                {/* Circle with a 200-meter radius around the location */}
+                <Circle
+                    center={{ latitude, longitude }}
+                    radius={200} // Radius in meters
+                    strokeColor="rgba(255, 0, 0, 0.5)" // Circle border color
+                    fillColor="rgba(255, 0, 0, 0.2)" // Circle fill color
+                />
+            </MapView>
 
             {/* Close button */}
             <View style={styles.buttonWrapper}>

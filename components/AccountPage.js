@@ -1,52 +1,40 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons'; // Import FontAwesome5 icons
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AccountPage = ({ navigation }) => {
     const profileImage = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; // Provided profile image URL
 
-    const renderAccountLink = (text, icon, onPress) => (
-        <TouchableOpacity style={styles.linkItem} onPress={onPress}>
-            <FontAwesome5 name={icon} size={24} color="black" style={styles.icon} />
-            <Text style={styles.linkText}>{text}</Text>
+    const renderAccountLink = (text, icon, onPress, color) => (
+        <TouchableOpacity style={[styles.linkItem, { backgroundColor: '#ffffff' }]} onPress={onPress}>
+            <FontAwesome5 name={icon} size={24} color={color} style={styles.icon} />
+            <Text style={[styles.linkText, { color: '#000' }]}>{text}</Text>
         </TouchableOpacity>
     );
 
-    // Navigation functions
-    const navigateToEditProfile = () => navigation.navigate('EditProfilePage');
-    const handleMyNetwork = () => { navigation.navigate('MyNetwork') };
-    const handleBuyPackages = () => { navigation.navigate('PackagePage') };
-    const handleSettings = () => { navigation.navigate('Settings') };
-    const handleHelpAndSupport = () => { };
-
-    const handleLogout = async () => {
-        try {
-            await AsyncStorage.removeItem('authToken');
-            navigation.navigate('Login')
-            console.log('Logged out successfully');
-            // Optionally, navigate to the login screen or perform other actions
-        } catch (error) {
-            console.error('Error logging out:', error);
-        }
-    }
-
     return (
-        <>
-            <View style={styles.container}>
-                <View style={styles.profileSection}>
-                    <Image source={{ uri: profileImage }} style={styles.profileImage} />
-                    <TouchableOpacity onPress={navigateToEditProfile}>
-                        <Text>Edit Profile</Text>
-                    </TouchableOpacity>
-                </View>
-                {renderAccountLink('My Network', 'users', handleMyNetwork)}
-                {renderAccountLink('Buy Packages', 'shopping-cart', handleBuyPackages)}
-                {renderAccountLink('Settings', 'cog', handleSettings)}
-                {renderAccountLink('Help and Support', 'question-circle', handleHelpAndSupport)}
-                {renderAccountLink('Logout', 'sign-out-alt', handleLogout)}
+        <View style={styles.container}>
+            <View style={styles.profileSection}>
+                <Image source={{ uri: profileImage }} style={styles.profileImage} />
+                <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditProfilePage')}>
+                    <Text style={styles.editButtonText}>Edit Profile</Text>
+                </TouchableOpacity>
             </View>
-        </>
+            {renderAccountLink('Followers', 'users', () => navigation.navigate('FollowersPage'), '#4CAF50')}
+            {renderAccountLink('Following', 'users', () => navigation.navigate('FollowingPage'), '#FF9800')}
+            {renderAccountLink('Buy Packages', 'shopping-cart', () => navigation.navigate('PackagePage'), '#FF9800')}
+            {renderAccountLink('Settings', 'cog', () => navigation.navigate('Settings'), '#2196F3')}
+            {renderAccountLink('Help and Support', 'question-circle', () => { }, '#F44336')}
+            {renderAccountLink('Logout', 'sign-out-alt', async () => {
+                try {
+                    await AsyncStorage.removeItem('authToken');
+                    navigation.navigate('Login');
+                    console.log('Logged out successfully');
+                } catch (error) {
+                    console.error('Error logging out:', error);
+                }
+            }, '#607D8B')}
+        </View>
     );
 };
 
@@ -55,7 +43,7 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
         alignItems: 'center',
-        backgroundColor: '#F5F5F5', // Adjust background color as needed
+        backgroundColor: '#F5F5F5',
     },
     profileSection: {
         flexDirection: 'row',
@@ -68,22 +56,38 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         marginRight: 20,
     },
+    editButton: {
+        backgroundColor: '#2196F3',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 4,
+    },
+    editButtonText: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+    },
     linkItem: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 15,
-        backgroundColor: 'white', // Set the link item background color
+        backgroundColor: '#FFFFFF',
         padding: 10,
         borderRadius: 8,
-        width: 250,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: '100%',
+        justifyContent: 'flex-start',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 2,
     },
     linkText: {
+        flex: 1,
         marginLeft: 10,
+        fontSize: 16,
     },
     icon: {
-        marginRight: 10,
+        width: 30, // Ensures icon alignment
     },
 });
 

@@ -3,20 +3,22 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddCarForm = ({ route }) => {
   const { category, subcategory, product } = route.params;
+  const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     brand: '',
-    year: '',
-    fuelType: '',
-    transmission: '',
+    year: currentYear, // Default to the current year
+    fuelType: 'Petrol',
+    transmission: 'Automatic',
     kmDriven: '',
-    owners: '',
+    owners: '1st',
     adTitle: '',
     description: '',
     amount: '',
-    images: [], // Updated to handle multiple images
+    images: [],
   });
 
   useEffect(() => {
@@ -29,11 +31,11 @@ const AddCarForm = ({ route }) => {
         amount: product.post_details.amount ?? '',
         kmDriven: product.post_details.km_driven.toString() ?? '',
         brand: product.post_details.brand ?? '',
-        year: product.post_details.year ?? '',
+        year: product.post_details.year ?? currentYear,
         transmission: product.post_details.transmission ?? '',
         owners: product.post_details.no_of_owner ?? '',
         fuelType: product.post_details.fuel ?? '',
-        images: product.images || [], // Set existing images
+        images: product.images || [],
       });
     }
   }, [product]);
@@ -45,16 +47,12 @@ const AddCarForm = ({ route }) => {
     });
   };
 
-  const handleFuelSelection = (type) => {
-    setFormData({ ...formData, fuelType: type });
-  };
-
-  const handleTransmissionSelection = (type) => {
-    setFormData({ ...formData, transmission: type });
-  };
-
-  const handleOwnersSelection = (type) => {
-    setFormData({ ...formData, owners: type });
+  const generateYears = () => {
+    const years = [];
+    for (let year = currentYear; year >= 1900; year--) {
+      years.push(year.toString());
+    }
+    return years;
   };
 
   const handleImagePick = async () => {
@@ -73,7 +71,7 @@ const AddCarForm = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    submitForm(formData, category)  // Use the centralized function
+    submitForm(formData, subcategory)  // Use the centralized function
       .then((response) => {
         console.log('Form submitted successfully', response);
       })
@@ -83,14 +81,14 @@ const AddCarForm = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
           <Text style={styles.formHeader}>
-            Add Product - {category.name || subcategory.name}
+            Add Product - {category.name ?? subcategory.name}
           </Text>
 
           {/* Brand Field */}
@@ -98,7 +96,7 @@ const AddCarForm = ({ route }) => {
           <Picker
             selectedValue={formData.brand}
             onValueChange={(value) => handleChange('brand', value)}
-            style={styles.input}
+            style={styles.picker}
           >
             <Picker.Item label="Select Brand" value="" />
             <Picker.Item label="Maruti Suzuki" value="Maruti Suzuki" />
@@ -171,15 +169,21 @@ const AddCarForm = ({ route }) => {
             <Picker.Item label="Other Brands" value="Other Brands" />
           </Picker>
 
-          {/* Year Field */}
+          {/* Year Dropdown */}
           <Text style={styles.label}>Year *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Year"
-            keyboardType="numeric"
-            value={formData.year}
-            onChangeText={(value) => handleChange('year', value)}
-          />
+          <Picker
+            selectedValue={formData.year} // Tracks the selected value
+            onValueChange={(value) => handleChange('year', value)} // Updates the selected value
+            style={styles.picker}
+          >
+            {generateYears().map((year) => (
+              <Picker.Item
+                key={year}
+                label={year}
+                value={year}
+              />
+            ))}
+          </Picker>
 
           {/* Fuel Type Selection */}
           <Text style={styles.label}>Fuel Type *</Text>
@@ -188,7 +192,7 @@ const AddCarForm = ({ route }) => {
               <TouchableOpacity
                 key={fuel}
                 style={[styles.optionButton, formData.fuelType === fuel && styles.selectedOption]}
-                onPress={() => handleFuelSelection(fuel)}
+                onPress={() => handleChange('fuelType', fuel)}
               >
                 <Text style={formData.fuelType === fuel ? styles.selectedText : styles.optionText}>{fuel}</Text>
               </TouchableOpacity>
@@ -202,7 +206,7 @@ const AddCarForm = ({ route }) => {
               <TouchableOpacity
                 key={trans}
                 style={[styles.optionButton, formData.transmission === trans && styles.selectedOption]}
-                onPress={() => handleTransmissionSelection(trans)}
+                onPress={() => handleChange('transmission', trans)}
               >
                 <Text style={formData.transmission === trans ? styles.selectedText : styles.optionText}>{trans}</Text>
               </TouchableOpacity>
@@ -226,7 +230,7 @@ const AddCarForm = ({ route }) => {
               <TouchableOpacity
                 key={owner}
                 style={[styles.optionButton, formData.owners === owner && styles.selectedOption]}
-                onPress={() => handleOwnersSelection(owner)}
+                onPress={() => handleChange('owners', owner)}
               >
                 <Text style={formData.owners === owner ? styles.selectedText : styles.optionText}>{owner}</Text>
               </TouchableOpacity>
@@ -281,102 +285,27 @@ const AddCarForm = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  formHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  scrollViewContent: {
-    padding: 16,
-    flexGrow: 1,
-    justifyContent: 'center', // Center the content vertically
-  },
-  label: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 20,
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    marginBottom: 20,
-    height: 50,
-  },
-  optionContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    // justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  optionButton: {
-    borderWidth: 1,
-    borderColor: '#007BFF',
-    borderRadius: 8,
-    padding: 10,
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  selectedOption: {
-    backgroundColor: '#007BFF',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#007BFF',
-  },
-  selectedText: {
-    color: '#fff',
-  },
-  imagePicker: {
-    backgroundColor: '#007BFF',
-    borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  imagePickerText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  imagesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 80, // Increase bottom margin to ensure space for the submit button
-  },
-  image: {
-    width: 100,
-    height: 100,
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  stickyButton: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+  container: { flex: 1 },
+  formHeader: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  scrollViewContent: { padding: 16, flexGrow: 1 },
+  label: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, marginBottom: 20 },
+  picker: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginBottom: 20 },
+  optionContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 },
+  optionButton: { borderWidth: 1, borderColor: '#007BFF', borderRadius: 8, padding: 10, marginRight: 10, marginBottom: 10 },
+  selectedOption: { backgroundColor: '#007BFF' },
+  optionText: { fontSize: 16, color: '#007BFF' },
+  selectedText: { color: '#fff' },
+  imagePicker: { backgroundColor: '#007BFF', borderRadius: 8, padding: 10, alignItems: 'center', marginBottom: 20 },
+  imagePickerText: { color: '#fff', fontSize: 16 },
+  imagesContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 80 },
+  image: { width: 100, height: 100, marginRight: 10, marginBottom: 10 },
+  stickyButton: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#ccc', justifyContent: 'center', alignItems: 'center', position: 'absolute', bottom: 0, left: 0, right: 0 },
 });
-
 
 export default AddCarForm;

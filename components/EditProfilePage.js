@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 
 const EditProfilePage = () => {
   const [userData, setUserData] = useState({
-    // Existing user data fields
     firstName: '',
     lastName: '',
     email: '',
@@ -12,19 +12,16 @@ const EditProfilePage = () => {
     businessName: '',
     businessType: '',
     businessAddress: '',
-    // New field for profile image
     profileImage: null,
+    businessWebsite: '',
+    bio: '',
   });
 
   const handleChange = (field, value) => {
-    setUserData({
-      ...userData,
-      [field]: value,
-    });
+    setUserData({ ...userData, [field]: value });
   };
 
   const handleSave = () => {
-    // Implement logic to save user data
     console.log('User Data:', userData);
   };
 
@@ -49,110 +46,88 @@ const EditProfilePage = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Account Details</Text>
-      <Text style={styles.header}>Profile Image</Text>
-      <TouchableOpacity style={styles.imagePicker} onPress={handleChooseImage}>
-        {userData.profileImage ? (
-          <Image source={{ uri: userData.profileImage }} style={styles.profileImage} />
-        ) : (
-          <Text>Select Profile Image</Text>
-        )}
-      </TouchableOpacity>
-      <TextInput
-        style={styles.input}
-        placeholder="First Name"
-        value={userData.firstName}
-        onChangeText={(text) => handleChange('firstName', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Last Name"
-        value={userData.lastName}
-        onChangeText={(text) => handleChange('lastName', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={userData.email}
-        onChangeText={(text) => handleChange('email', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Phone Number"
-        value={userData.phoneNumber}
-        onChangeText={(text) => handleChange('phoneNumber', text)}
-      />
-      <Text style={styles.header}>Business Details</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Business Name"
-        value={userData.businessName}
-        onChangeText={(text) => handleChange('businessName', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Business Type"
-        value={userData.businessType}
-        onChangeText={(text) => handleChange('businessType', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Business Address"
-        value={userData.businessAddress}
-        onChangeText={(text) => handleChange('businessAddress', text)}
-      />
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Save</Text>
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollView}>
+        <Text style={styles.header}>Edit Profile</Text>
+        <TouchableOpacity style={styles.imagePicker} onPress={handleChooseImage}>
+          {userData.profileImage ? (
+            <Image source={{ uri: userData.profileImage }} style={styles.profileImage} />
+          ) : (
+            <Ionicons name="camera" size={40} color="#ccc" />
+          )}
+        </TouchableOpacity>
+        <TextInput style={styles.input} placeholder="First Name" value={userData.firstName} onChangeText={(text) => handleChange('firstName', text)} />
+        <TextInput style={styles.input} placeholder="Last Name" value={userData.lastName} onChangeText={(text) => handleChange('lastName', text)} />
+        <TextInput style={styles.input} placeholder="Email" value={userData.email} onChangeText={(text) => handleChange('email', text)} />
+        <TextInput style={styles.input} placeholder="Phone Number" value={userData.phoneNumber} onChangeText={(text) => handleChange('phoneNumber', text)} />
+        <TextInput style={styles.input} placeholder="Business Name" value={userData.businessName} onChangeText={(text) => handleChange('businessName', text)} />
+        <TextInput style={styles.input} placeholder="Business Type" value={userData.businessType} onChangeText={(text) => handleChange('businessType', text)} />
+        <TextInput style={styles.input} placeholder="Business Address" value={userData.businessAddress} onChangeText={(text) => handleChange('businessAddress', text)} />
+        <TextInput style={styles.input} placeholder="Business Website" value={userData.businessWebsite} onChangeText={(text) => handleChange('businessWebsite', text)} />
+        <TextInput style={styles.input} placeholder="Tell us about yourself" value={userData.bio} onChangeText={(text) => handleChange('bio', text)} />
+      </ScrollView>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.footer}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>Save Changes</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  //...Existing styles...
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollView: {
+    paddingHorizontal: 20,
+  },
   header: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
+    color: '#007BFF',
+    marginBottom: 20,
   },
   imagePicker: {
-    borderWidth: 1,
-    borderColor: 'gray',
-    borderRadius: 5,
-    height: 150,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    overflow: 'hidden',
   },
   profileImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
-    borderRadius: 5,
-  },
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    height: 45,
+    borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 10,
+    marginBottom: 15,
     paddingHorizontal: 10,
+    fontSize: 16,
+  },
+  footer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+    backgroundColor: '#f8f9fa',
   },
   saveButton: {
-    backgroundColor: 'blue',
-    padding: 10,
+    backgroundColor: '#007BFF',
+    padding: 15,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 20,
+    width: '100%',
   },
   saveButtonText: {
     color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });

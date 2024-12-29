@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddPgGuestHouse = ({ route }) => {
   const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
-    pgType: '',
-    furnishing: '',
-    listedBy: '',
-    carParking: '',
-    isMealIncluded: '',
+    pgType: 'PG',
+    furnishing: 'Unfurnished',
+    listedBy: 'Owner',
+    carParking: '1',
+    isMealIncluded: 'No',
     adTitle: '',
     carpetArea: '',
     description: '',
@@ -80,7 +81,7 @@ const AddPgGuestHouse = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -147,7 +148,7 @@ const AddPgGuestHouse = ({ route }) => {
           {/* Car Parking */}
           <Text style={styles.label}>Car Parking *</Text>
           <View style={styles.optionContainer}>
-            {['1', '2', '3', '4', '5', '5+'].map((option) => (
+            {['0', '1', '2', '3', '4', '5', '5+'].map((option) => (
               <TouchableOpacity
                 key={option}
                 style={[styles.optionButton, formData.carParking === option && styles.selectedOption]}
@@ -224,7 +225,7 @@ const AddPgGuestHouse = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

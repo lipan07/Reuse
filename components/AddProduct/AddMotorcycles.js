@@ -4,14 +4,16 @@ import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddMotorcycles = ({ route }) => {
   const { category, subcategory, product } = route.params;
   const [brands, setBrands] = useState([]);
+  const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     brand: '',
     adTitle: '',
-    year: '',
+    year: currentYear,
     km_driven: '',
     description: '',
     amount: '',
@@ -39,6 +41,14 @@ const AddMotorcycles = ({ route }) => {
       ...formData,
       [name]: value,
     });
+  };
+
+  const generateYears = () => {
+    const years = [];
+    for (let year = currentYear; year >= 1900; year--) {
+      years.push(year.toString());
+    }
+    return years;
   };
 
   const handleImagePick = async () => {
@@ -92,7 +102,7 @@ const AddMotorcycles = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -113,14 +123,22 @@ const AddMotorcycles = ({ route }) => {
             ))}
           </Picker>
 
-          {/* Year Field */}
+          {/* Year Dropdown */}
           <Text style={styles.label}>Year *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter year"
-            value={formData.year}
-            onChangeText={(value) => handleChange('year', value)}
-          />
+          <Picker
+            selectedValue={formData.year} // Tracks the selected value
+            onValueChange={(value) => handleChange('year', value)} // Updates the selected value
+            style={styles.picker}
+          >
+            {generateYears().map((year) => (
+              <Picker.Item
+                key={year}
+                label={year}
+                value={year}
+              />
+            ))}
+          </Picker>
+
           {/* Title Field */}
           <Text style={styles.label}>KM Driven *</Text>
           <TextInput
@@ -177,7 +195,7 @@ const AddMotorcycles = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

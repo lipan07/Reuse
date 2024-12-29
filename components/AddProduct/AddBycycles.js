@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddBycycles = ({ route }) => {
   const { category, subcategory, product } = route.params;
@@ -88,7 +89,7 @@ const AddBycycles = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -157,7 +158,7 @@ const AddBycycles = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

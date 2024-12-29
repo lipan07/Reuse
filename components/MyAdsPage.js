@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
 import BottomNavBar from './BottomNavBar';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import the icon library
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +9,7 @@ const MyAdsPage = ({ navigation }) => {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isPopupVisible, setPopupVisible] = useState(false);
+  const [isDeleteConfirmVisible, setDeleteConfirmVisible] = useState(false); // State for delete confirmation modal
 
   useEffect(() => {
     fetchProducts();
@@ -77,6 +78,19 @@ const MyAdsPage = ({ navigation }) => {
 
   const hidePopup = () => {
     setPopupVisible(false);
+  };
+
+  const showDeleteConfirmModal = () => {
+    setDeleteConfirmVisible(true);
+  };
+
+  const hideDeleteConfirmModal = () => {
+    setDeleteConfirmVisible(false);
+  };
+
+  const confirmDelete = () => {
+    hideDeleteConfirmModal();
+    deleteProduct();
   };
 
   const categoryComponentMap = {
@@ -177,31 +191,87 @@ const MyAdsPage = ({ navigation }) => {
         contentContainerStyle={styles.productList}
       />
       <BottomNavBar navigation={navigation} />
-      <Modal visible={isPopupVisible} transparent={true} animationType="slide">
+
+      {/* Action Modal */}
+      <Modal
+        visible={isPopupVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={hidePopup}
+      >
         <TouchableWithoutFeedback onPress={hidePopup}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.popupContainer}>
                 <Text style={styles.popupTitle}>Choose an option:</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('ProductDetails', { product: selectedProduct })}>
+                <TouchableOpacity
+                  onPress={() => {
+                    hidePopup();
+                    setTimeout(() => {
+                      navigation.navigate('ProductDetails', { product: selectedProduct });
+                    }, 300);
+                  }}
+                >
                   <Text style={styles.popupOption}>Details</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  // Navigate to the AddOthers component with selectedProduct for editing
-                  const editComponent = getComponentForCategory(selectedProduct.category.guard_name);
-                  navigation.navigate(editComponent, { category: [], subcategory: selectedProduct.category, product: selectedProduct });
-                  hidePopup(); // Hide the popup after navigation
-                }}>
+                <View style={styles.separator} />
+                <TouchableOpacity
+                  onPress={() => {
+                    hidePopup();
+                    setTimeout(() => {
+                      navigation.navigate('MyFollowersPage', { product: selectedProduct });
+                    }, 300);
+                  }}
+                >
+                  <Text style={styles.popupOption}>Followers</Text>
+                </TouchableOpacity>
+                <View style={styles.separator} />
+                <TouchableOpacity
+                  onPress={() => {
+                    hidePopup();
+                    setTimeout(() => {
+                      const editComponent = getComponentForCategory(selectedProduct.category.guard_name);
+                      navigation.navigate(editComponent, { category: [], subcategory: selectedProduct.category, product: selectedProduct });
+                    }, 300);
+                  }}
+                >
                   <Text style={styles.popupOption}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  deleteProduct();
-                  hidePopup();
-                }}>
-                  <Text style={styles.popupOption}>Delete</Text>
+                <View style={styles.separator} />
+                <TouchableOpacity
+                  onPress={() => {
+                    hidePopup();
+                    showDeleteConfirmModal();
+                  }}
+                >
+                  <Text style={[styles.popupOption, styles.deleteOption]}>Delete</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={isDeleteConfirmVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={hideDeleteConfirmModal}
+      >
+        <TouchableWithoutFeedback onPress={hideDeleteConfirmModal}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.confirmContainer}>
+              <Text style={styles.confirmTitle}>Are you sure you want to delete this post?</Text>
+              <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.cancelButton} onPress={hideDeleteConfirmModal}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.confirmButton} onPress={confirmDelete}>
+                  <Text style={styles.confirmButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -247,32 +317,91 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'green',
   },
+  separator: {
+    height: 1,
+    backgroundColor: '#e4f0e6', // Make sure this color is visible
+    marginVertical: 7, // Adjust margin for spacing
+    width: '40%', // Ensure it takes the full width of the parent container
+  },
   arrowIcon: {
     marginLeft: 10,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Slightly more opaque background
     justifyContent: 'center',
     alignItems: 'center',
   },
   popupContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    padding: 25,
+    borderRadius: 15,
     width: '80%',
     elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    flexDirection: 'column', // Ensures that elements are arranged vertically
+    alignItems: 'center', // Center content inside the modal
   },
   popupTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
   },
   popupOption: {
-    marginVertical: 10,
+    marginVertical: 12,
     fontSize: 16,
     textAlign: 'center',
+    color: '#007BFF',
+    fontWeight: '500',
+    flexDirection: 'row',
+    alignItems: 'center', // Align the icon and text horizontally
+  },
+  deleteOption: {
+    color: '#FF5C5C', // Red color for delete option
+  },
+  confirmContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '80%',
+  },
+  confirmTitle: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    marginRight: 10,
+    padding: 10,
+    backgroundColor: '#ccc',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  confirmButton: {
+    flex: 1,
+    marginLeft: 10,
+    padding: 10,
+    backgroundColor: '#d9534f',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#000',
+  },
+  confirmButtonText: {
+    color: '#fff',
   },
 });
 

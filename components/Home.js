@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, FlatList, ActivityIndicator, DeviceEventEmitter, Animated, RefreshControl } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Image, TextInput, FlatList, ActivityIndicator, DeviceEventEmitter,
+  Animated, RefreshControl, TouchableWithoutFeedback, Keyboard
+} from 'react-native';
 import Swiper from 'react-native-swiper';
 import CategoryMenu from './CategoryMenu';
 import BottomNavBar from './BottomNavBar';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const Home = ({ navigation }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -13,20 +17,43 @@ const Home = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [search, setSearch] = useState(null);
-  const [showMenu, setShowMenu] = useState(true); // State to control CategoryMenu visibility
-  const [refreshing, setRefreshing] = useState(false); // State for pull-to-refresh
+  const [search, setSearch] = useState('');
+  const [showMenu, setShowMenu] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [showRecentSearches, setShowRecentSearches] = useState(false);
 
-  const lastScrollY = useRef(0); // Track the last scroll position
+  const lastScrollY = useRef(0);
 
-  // Function to fetch products
+  useEffect(() => {
+    loadRecentSearches();
+  }, []);
+
+  const loadRecentSearches = async () => {
+    try {
+      const storedSearches = await AsyncStorage.getItem('recentSearches');
+      if (storedSearches) {
+        setRecentSearches(JSON.parse(storedSearches));
+      }
+    } catch (error) {
+      console.error("Error loading recent searches:", error);
+    }
+  };
+
+  const addRecentSearch = async (searchText) => {
+    if (searchText.trim()) {
+      const updatedSearches = [searchText, ...recentSearches.filter((item) => item !== searchText)].slice(0, 5);
+      await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+      setRecentSearches(updatedSearches);
+    }
+  };
+
   const fetchProducts = async (page, category, reset = false, search = null) => {
     const token = await AsyncStorage.getItem('authToken');
-    if (isLoading) return; // Avoid multiple requests while one is in progress
+    if (isLoading) return;
 
     setIsLoading(true);
     const apiUrl = `${process.env.BASE_URL}/posts?page=${page}${category ? `&category=${category}` : ''}${search ? `&search=${search}` : ''}`;
-    console.log(apiUrl);
     const requestOptions = {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
@@ -36,12 +63,12 @@ const Home = ({ navigation }) => {
       const response = await fetch(apiUrl, requestOptions);
       const jsonResponse = await response.json();
       if (!jsonResponse.data || jsonResponse.data.length === 0) {
-        setProducts([]); // Clear product list if no data is returned
-        setHasMore(false); // Stop further fetching
+        setProducts([]);
+        setHasMore(false);
       } else if (reset) {
-        setProducts(jsonResponse.data); // Reset the product list
+        setProducts(jsonResponse.data);
       } else {
-        setProducts((prevProducts) => [...prevProducts, ...jsonResponse.data]); // Append new data
+        setProducts((prevProducts) => [...prevProducts, ...jsonResponse.data]);
       }
 
       setCurrentPage(page);
@@ -49,26 +76,26 @@ const Home = ({ navigation }) => {
     } catch (error) {
       console.error('Failed to load products', error);
     } finally {
-      setIsLoading(false); // Ensure loading is reset after the API call completes
-      setRefreshing(false); // Stop the refreshing animation
+      setIsLoading(false);
+      setRefreshing(false);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      setSelectedCategory(null); // Update category ID when a category is selected
-      fetchProducts(1, null, true); // Refresh products when screen is focused
+      setSelectedCategory(null);
+      fetchProducts(1, null, true);
     }, [])
   );
 
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener('refreshHome', () => {
       setSelectedCategory(null);
-      fetchProducts(1, null, true); // Refresh products when Home is pressed again
+      fetchProducts(1, null, true);
     });
 
     return () => {
-      subscription.remove(); // Clean up the event listener when the component unmounts
+      subscription.remove();
     };
   }, []);
 
@@ -77,61 +104,60 @@ const Home = ({ navigation }) => {
       const token = await AsyncStorage.getItem('authToken');
       if (!token) {
         setIsLoggedIn(false);
-        // Fetch user data or perform other actions with the token
         navigation.navigate('Login');
       }
     };
     checkLoginStatus();
   }, []);
 
-  // Handle scrolling to the end of the list
   const handleScrollEndReached = () => {
     if (!isLoading && hasMore) {
       fetchProducts(currentPage + 1, selectedCategory);
     }
   };
 
-  // Refresh products when pulling to refresh or at top
   const handleRefresh = () => {
     setRefreshing(true);
     fetchProducts(1, selectedCategory, true);
   };
 
-  // Handle Scroll to show/hide CategoryMenu and refresh at the top
   const handleScroll = (event) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
-
     if (currentScrollY > lastScrollY.current && currentScrollY > 10) {
-      // Scrolling up, hide CategoryMenu
       setShowMenu(false);
     } else if (currentScrollY <= 0) {
-      // Scrolling to the top, show CategoryMenu and refresh the list
       setShowMenu(true);
-      // handleRefresh(); // Trigger refresh when at the top
-    } else {
-      // setShowMenu(true); // Make sure menu is shown when scrolling down
     }
-
     lastScrollY.current = currentScrollY;
   };
 
-  // Handle category selection from the CategoryMenu
   const handleCategorySelect = (categoryId) => {
-    setSelectedCategory(categoryId); // Update category ID when a category is selected
+    setSelectedCategory(categoryId);
     fetchProducts(1, categoryId, true);
   };
 
   const handleInputChange = (text) => {
     setSearch(text);
+    setShowRecentSearches(true);
   };
 
-  // Handler to execute when search is performed
   const handleSearchPress = () => {
-    console.log('Searching for:', search);
     fetchProducts(1, null, true, search);
+    addRecentSearch(search);
+    setShowRecentSearches(false);
   };
 
-  // Render each product item in the FlatList
+  const handleRecentSearchSelect = (searchText) => {
+    setSearch(searchText);
+    handleSearchPress();
+  };
+
+  const clearSearch = () => {
+    setSearch('');
+    setShowRecentSearches(false);
+    fetchProducts(1, null, true);
+  };
+
   const renderProductItem = ({ item }) => (
     <TouchableOpacity
       style={styles.productItem}
@@ -152,70 +178,134 @@ const Home = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const handleOutsidePress = () => {
+    setShowRecentSearches(false);
+    Keyboard.dismiss();
+  };
+
   return (
-    <View style={styles.container}>
+    <TouchableWithoutFeedback onPress={handleOutsidePress}>
+      <View style={styles.container}>
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            onChangeText={handleInputChange}
+            value={search}
+            placeholder="Search..."
+            onFocus={() => setShowRecentSearches(true)}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+              <Icon name="close" size={20} color="#888" />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
+            <Icon name="search" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.searchBar}>
-        <TextInput style={styles.searchInput} onChangeText={handleInputChange} value={search} placeholder="Search..." />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
-          <Text style={styles.buttonText}>Search</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Conditionally render CategoryMenu based on scroll direction */}
-      {showMenu && <CategoryMenu onCategorySelect={handleCategorySelect} />}
-
-      {isLoading && products.length === 0 && <ActivityIndicator size="large" color="#007bff" style={styles.loaderTop} />}
-
-      <FlatList
-        data={products}
-        renderItem={renderProductItem}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.productList}
-        onEndReached={handleScrollEndReached}
-        onEndReachedThreshold={0.1}
-        onScroll={handleScroll}  // Track scroll to show/hide CategoryMenu
-        scrollEventThrottle={16} // Throttle scroll events to 16ms for smooth updates
-        ListEmptyComponent={() => (
-          !isLoading && <Text style={styles.noProductsText}>No products found</Text>
+        {showRecentSearches && recentSearches.length > 0 && (
+          <View style={styles.recentSearchOverlay}>
+            {recentSearches.map((item, index) => (
+              <TouchableOpacity key={index} onPress={() => handleRecentSearchSelect(item)}>
+                <Text style={styles.recentSearchItem}>{item}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
-        ListFooterComponent={
-          products.length > 0 ? (
-            isLoading && hasMore ? <ActivityIndicator size="large" color="#007bff" style={styles.loaderBottom} /> : null
-          ) : null
-        }
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} /> // Pull-to-refresh functionality
-        }
-      />
 
-      <BottomNavBar navigation={navigation} />
+        {showMenu && <CategoryMenu onCategorySelect={handleCategorySelect} />}
 
-    </View>
+        {isLoading && products.length === 0 && (
+          <ActivityIndicator size="large" color="#007bff" style={styles.loaderTop} />
+        )}
+
+        <FlatList
+          data={products}
+          renderItem={renderProductItem}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          contentContainerStyle={styles.productList}
+          onEndReached={handleScrollEndReached}
+          onEndReachedThreshold={0.1}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          ListEmptyComponent={() => (
+            !isLoading && <Text style={styles.noProductsText}>No products found</Text>
+          )}
+          ListFooterComponent={
+            products.length > 0 ? (
+              isLoading && hasMore ? <ActivityIndicator size="large" color="#007bff" style={styles.loaderBottom} /> : null
+            ) : null
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        />
+
+        <BottomNavBar navigation={navigation} />
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF', padding: 10 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 0 },
-  locationLink: { flexDirection: 'row', alignItems: 'center' },
-  locationText: { fontSize: 16, marginLeft: 5 },
-  userIcon: { right: 25 },
-  searchBar: { flexDirection: 'row', paddingHorizontal: 5, marginVertical: 5 },
-  searchInput: { flex: 1, height: 40, borderColor: 'gray', borderWidth: 1, paddingHorizontal: 10, borderRadius: 5 },
-  searchButton: { backgroundColor: '#007bff', justifyContent: 'center', paddingHorizontal: 15, borderRadius: 5, marginLeft: 10 },
-  buttonText: { color: '#fff', fontSize: 16, textAlign: 'center' },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginVertical: 5,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    paddingHorizontal: 10,
+    fontSize: 16,
+  },
+  clearButton: { position: 'absolute', right: 60, padding: 5 },
+  searchButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 5,
+  },
+  recentSearchOverlay: {
+    position: 'absolute',
+    top: 70,
+    left: 10,
+    right: 10,
+    backgroundColor: '#FFF',
+    borderRadius: 5,
+    padding: 10,
+    opacity: 0.95,
+    zIndex: 1,
+  },
+  recentSearchItem: {
+    paddingVertical: 8,
+    fontSize: 16,
+    color: '#007bff',
+  },
   productList: { paddingHorizontal: 5, paddingBottom: 60 },
   productItem: {
-    flex: 1, margin: 5, borderRadius: 5, borderWidth: 0.4, borderColor: 'yellow', padding: 10, alignItems: 'center', backgroundColor: '#F9F9F9', shadowColor: '#565656',
+    flex: 1,
+    margin: 5,
+    borderRadius: 5,
+    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    shadowColor: '#565656',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 10
+    elevation: 10,
   },
   imageContainer: { height: 120, width: '100%', borderRadius: 5, overflow: 'hidden', marginBottom: 8 },
-  swiper: { height: '100%' },
   productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   productName: { fontWeight: 'bold', textAlign: 'center' },
   details: { fontSize: 16, marginTop: 5, marginBottom: 10 },

@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddElectronicsRepairServices = ({ route }) => {
   const { category, subcategory, product } = route.params;
@@ -62,7 +63,7 @@ const AddElectronicsRepairServices = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -133,7 +134,7 @@ const AddElectronicsRepairServices = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 
