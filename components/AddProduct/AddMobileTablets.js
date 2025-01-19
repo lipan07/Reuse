@@ -53,7 +53,7 @@ const AddMobileTablets = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    submitForm(formData, category)  // Use the centralized function
+    submitForm(formData, subcategory)  // Use the centralized function
       .then((response) => {
         console.log('Form submitted successfully', response);
       })

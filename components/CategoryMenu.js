@@ -1,19 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-const CategoryMenu = ({ onCategorySelect }) => {
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+const CategoryMenu = ({ onCategorySelect, selectedCategory }) => {
+  const [selectedCategoryId, setSelectedCategoryId] = useState(selectedCategory);
   const categories = [
+    { id: '', name: 'All', icon: 'list', color: '#8A2BE2' },
     { id: '1', name: 'Cars', icon: 'car', color: '#FF6347' },
     { id: '2', name: 'Properties', icon: 'home', color: '#4682B4' },
-    { id: '3', name: 'Mobile', icon: 'phone-portrait', color: '#32CD32' },
-    { id: '4', name: 'Electronics', icon: 'tv', color: '#FFD700' },
-    { id: '5', name: 'Bikes', icon: 'bicycle', color: '#D2691E' },
-    { id: '6', name: 'Furniture', icon: 'bed', color: '#8A2BE2' },
-    { id: '7', name: 'Fashion', icon: 'shirt', color: '#FF69B4' },
-    { id: '8', name: 'Books', icon: 'book', color: '#6495ED' },
+    { id: '7', name: 'Mobile', icon: 'phone-portrait', color: '#32CD32' },
+    { id: '29', name: 'Electronics', icon: 'tv', color: '#FFD700' },
+    { id: '24', name: 'Bikes', icon: 'bicycle', color: '#D2691E' },
+    { id: '45', name: 'Furniture', icon: 'bed', color: '#8A2BE2' },
+    { id: '51', name: 'Fashion', icon: 'shirt', color: '#FF69B4' },
+    { id: '55', name: 'Books', icon: 'book', color: '#6495ED' },
   ];
+
+  useEffect(() => {
+    setSelectedCategoryId(selectedCategory); // Update when selectedCategory prop changes
+  }, [selectedCategory]);
 
   const handleCategorySelect = (id) => {
     setSelectedCategoryId(id);

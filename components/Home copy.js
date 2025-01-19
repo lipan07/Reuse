@@ -28,108 +28,50 @@ const Home = () => {
 
   const lastScrollY = useRef(0);
 
-  // useEffect(() => {
-  //   // Set filters from route.params when navigating with filters
-  //   if (route.params?.filters) {
-  //     setFilters(route.params.filters);
-  //   }
-  // }, [route.params]);
-
   useEffect(() => {
-    if (route.params?.products) {
-      // Set filtered products if passed from the filter page
-      setProducts(route.params.products);
-      setFilters(route.params.filters || {});
-      setHasMore(false); // Disable infinite scroll for filtered data
+    // Set filters from route.params when navigating with filters
+    if (route.params?.filters) {
+      setFilters(route.params.filters);
     }
   }, [route.params]);
 
-  useFocusEffect(
-    useCallback(() => {
-      console.log('Screen focused - Initializing');
-      const apiURL = `${process.env.BASE_URL}/posts`;
-      const param = {};
+  useEffect(() => {
+    loadRecentSearches();
+  }, []);
 
-      if (selectedCategory) {
-        param.category = selectedCategory;
+  const loadRecentSearches = async () => {
+    try {
+      const storedSearches = await AsyncStorage.getItem('recentSearches');
+      if (storedSearches) {
+        setRecentSearches(JSON.parse(storedSearches));
       }
-      if (search.trim()) {
-        param.search = search;
-      }
-
-      console.log('API Parameters on Focus:', param);
-      fetchProducts(true, param);
-
-      // Cleanup function for when the screen loses focus
-      return () => {
-        console.log('Screen unfocused - Cleanup if needed');
-      };
-    }, [selectedCategory])
-  );
-
-  // Add debounce to handle input changes
-  const debounceTimeout = useRef(null);
-  const handleInputChange = (text) => {
-    setSearch(text);
-
-    // Cancel any existing debounce timers
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
+    } catch (error) {
+      console.error("Error loading recent searches:", error);
     }
-
-    // Set a new debounce timer (e.g., 500ms delay)
-    debounceTimeout.current = setTimeout(() => {
-      console.log('Debounced search input:', text);
-      // Optionally, you can auto-save recent searches here
-    }, 500);
   };
 
-  // useEffect(() => {
-  //   loadRecentSearches();
-  // }, []);
+  const addRecentSearch = async (searchText) => {
+    if (searchText.trim()) {
+      const updatedSearches = [searchText, ...recentSearches.filter((item) => item !== searchText)].slice(0, 5);
+      await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+      setRecentSearches(updatedSearches);
+    }
+  };
 
-  // const loadRecentSearches = async () => {
-  //   try {
-  //     const storedSearches = await AsyncStorage.getItem('recentSearches');
-  //     if (storedSearches) {
-  //       setRecentSearches(JSON.parse(storedSearches));
-  //     }
-  //   } catch (error) {
-  //     console.error("Error loading recent searches:", error);
-  //   }
-  // };
-
-  // const addRecentSearch = async (searchText) => {
-  //   if (searchText.trim()) {
-  //     const updatedSearches = [searchText, ...recentSearches.filter((item) => item !== searchText)].slice(0, 5);
-  //     await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
-  //     setRecentSearches(updatedSearches);
-  //   }
-  // };
-
-  const fetchProducts = async (reset = false, param = null) => {
-    console.log('param- ', param);
+  const fetchProducts = async (page, category, reset = false, search = null) => {
     const token = await AsyncStorage.getItem('authToken');
     if (isLoading) return;
 
     setIsLoading(true);
-    let apiURL = `${process.env.BASE_URL}/posts?page=1`;
-
-    // Append additional query parameters if `param` has data
-    if (param && Object.keys(param).length > 0) {
-      const queryParams = new URLSearchParams(param).toString();
-      apiURL += `&${queryParams}`;
-    }
-    console.log('apiUrl- ', apiURL);
+    const apiUrl = `${process.env.BASE_URL}/posts?page=${page}${category ? `&category=${category}` : ''}${search ? `&search=${search}` : ''}`;
     const requestOptions = {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
     };
 
     try {
-      const response = await fetch(apiURL, requestOptions);
+      const response = await fetch(apiUrl, requestOptions);
       const jsonResponse = await response.json();
-      // console.log(jsonResponse);
       if (!jsonResponse.data || jsonResponse.data.length === 0) {
         setProducts([]);
         setHasMore(false);
@@ -139,7 +81,7 @@ const Home = () => {
         setProducts((prevProducts) => [...prevProducts, ...jsonResponse.data]);
       }
 
-      // setCurrentPage(page);
+      setCurrentPage(page);
       setHasMore(jsonResponse.data && jsonResponse.data.length === 15 && jsonResponse.links.next != null);
     } catch (error) {
       console.error('Failed to load products', error);
@@ -149,16 +91,23 @@ const Home = () => {
     }
   };
 
-  // useEffect(() => {
-  //   const subscription = DeviceEventEmitter.addListener('refreshHome', () => {
-  //     setSelectedCategory(null);
-  //     fetchProducts(1, null, true);
-  //   });
+  useFocusEffect(
+    useCallback(() => {
+      setSelectedCategory(null);
+      fetchProducts(1, null, true);
+    }, [])
+  );
 
-  //   return () => {
-  //     subscription.remove();
-  //   };
-  // }, []);
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener('refreshHome', () => {
+      setSelectedCategory(null);
+      fetchProducts(1, null, true);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -173,15 +122,13 @@ const Home = () => {
 
   const handleScrollEndReached = () => {
     if (!isLoading && hasMore) {
-      console.log('Scrollend call');
-      // fetchProducts(currentPage + 1);
+      fetchProducts(currentPage + 1, selectedCategory);
     }
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
-    console.log('Refresh call');
-    fetchProducts(true);
+    fetchProducts(1, selectedCategory, true);
   };
 
   const handleScroll = (event) => {
@@ -196,37 +143,29 @@ const Home = () => {
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
-    console.log('Category select call- ', categoryId);
-    var param = { 'category': categoryId };
-    if (search) { param.search = search };
-    fetchProducts(true, param);
+    fetchProducts(1, categoryId, true);
   };
 
-  // const handleInputChange = (text) => {
-  //   setSearch(text);
-  //   // setShowRecentSearches(true);
-  // };
+  const handleInputChange = (text) => {
+    setSearch(text);
+    setShowRecentSearches(true);
+  };
 
   const handleSearchPress = () => {
-    console.log('Search button pressed');
-    const param = { search: search.trim() };
-    if (selectedCategory) {
-      param.category = selectedCategory;
-    }
-    fetchProducts(true, param);
+    fetchProducts(1, null, true, search);
+    addRecentSearch(search);
+    setShowRecentSearches(false);
   };
 
-  // const handleRecentSearchSelect = (searchText) => {
-  //   setSearch(searchText);
-  //   handleSearchPress();
-  // };
+  const handleRecentSearchSelect = (searchText) => {
+    setSearch(searchText);
+    handleSearchPress();
+  };
 
   const clearSearch = () => {
     setSearch('');
-    // setSelectedCategory('');
-    console.log('Clear search call');
-    if (selectedCategory) { var param = { 'category': selectedCategory } }
-    fetchProducts(true, param);
+    setShowRecentSearches(false);
+    fetchProducts(1, null, true);
   };
 
   const renderProductItem = ({ item }) => (

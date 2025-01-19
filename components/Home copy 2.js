@@ -23,8 +23,8 @@ const Home = () => {
   const [search, setSearch] = useState('');
   const [showMenu, setShowMenu] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [recentSearches, setRecentSearches] = useState([]);
-  const [showRecentSearches, setShowRecentSearches] = useState(false);
+  // const [recentSearches, setRecentSearches] = useState([]);
+  // const [showRecentSearches, setShowRecentSearches] = useState(false);
 
   const lastScrollY = useRef(0);
 
@@ -46,43 +46,11 @@ const Home = () => {
 
   useFocusEffect(
     useCallback(() => {
-      console.log('Screen focused - Initializing');
-      const apiURL = `${process.env.BASE_URL}/posts`;
-      const param = {};
-
-      if (selectedCategory) {
-        param.category = selectedCategory;
-      }
-      if (search.trim()) {
-        param.search = search;
-      }
-
-      console.log('API Parameters on Focus:', param);
-      fetchProducts(true, param);
-
-      // Cleanup function for when the screen loses focus
-      return () => {
-        console.log('Screen unfocused - Cleanup if needed');
-      };
-    }, [selectedCategory])
+      setSelectedCategory(null);
+      console.log('Initial call');
+      fetchProducts(1, true);
+    }, [])
   );
-
-  // Add debounce to handle input changes
-  const debounceTimeout = useRef(null);
-  const handleInputChange = (text) => {
-    setSearch(text);
-
-    // Cancel any existing debounce timers
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-
-    // Set a new debounce timer (e.g., 500ms delay)
-    debounceTimeout.current = setTimeout(() => {
-      console.log('Debounced search input:', text);
-      // Optionally, you can auto-save recent searches here
-    }, 500);
-  };
 
   // useEffect(() => {
   //   loadRecentSearches();
@@ -107,29 +75,23 @@ const Home = () => {
   //   }
   // };
 
-  const fetchProducts = async (reset = false, param = null) => {
-    console.log('param- ', param);
+  const fetchProducts = async (page, reset = false) => {
+
+    console.log('selectedCategory- ', selectedCategory);
+    console.log('search- ', search);
     const token = await AsyncStorage.getItem('authToken');
     if (isLoading) return;
 
     setIsLoading(true);
-    let apiURL = `${process.env.BASE_URL}/posts?page=1`;
-
-    // Append additional query parameters if `param` has data
-    if (param && Object.keys(param).length > 0) {
-      const queryParams = new URLSearchParams(param).toString();
-      apiURL += `&${queryParams}`;
-    }
-    console.log('apiUrl- ', apiURL);
+    const apiUrl = `${process.env.BASE_URL}/posts?page=${page}${selectedCategory ? `&category=${selectedCategory}` : ''}${search ? `&search=${search}` : ''}`;
     const requestOptions = {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
     };
 
     try {
-      const response = await fetch(apiURL, requestOptions);
+      const response = await fetch(apiUrl, requestOptions);
       const jsonResponse = await response.json();
-      // console.log(jsonResponse);
       if (!jsonResponse.data || jsonResponse.data.length === 0) {
         setProducts([]);
         setHasMore(false);
@@ -139,7 +101,7 @@ const Home = () => {
         setProducts((prevProducts) => [...prevProducts, ...jsonResponse.data]);
       }
 
-      // setCurrentPage(page);
+      setCurrentPage(page);
       setHasMore(jsonResponse.data && jsonResponse.data.length === 15 && jsonResponse.links.next != null);
     } catch (error) {
       console.error('Failed to load products', error);
@@ -174,14 +136,14 @@ const Home = () => {
   const handleScrollEndReached = () => {
     if (!isLoading && hasMore) {
       console.log('Scrollend call');
-      // fetchProducts(currentPage + 1);
+      fetchProducts(currentPage + 1);
     }
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
     console.log('Refresh call');
-    fetchProducts(true);
+    fetchProducts(1, true);
   };
 
   const handleScroll = (event) => {
@@ -196,24 +158,20 @@ const Home = () => {
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
-    console.log('Category select call- ', categoryId);
-    var param = { 'category': categoryId };
-    if (search) { param.search = search };
-    fetchProducts(true, param);
+    console.log('Category select call');
+    fetchProducts(1, true);
   };
 
-  // const handleInputChange = (text) => {
-  //   setSearch(text);
-  //   // setShowRecentSearches(true);
-  // };
+  const handleInputChange = (text) => {
+    setSearch(text);
+    // setShowRecentSearches(true);
+  };
 
   const handleSearchPress = () => {
-    console.log('Search button pressed');
-    const param = { search: search.trim() };
-    if (selectedCategory) {
-      param.category = selectedCategory;
-    }
-    fetchProducts(true, param);
+    console.log('Search call');
+    fetchProducts(1, true);
+    // addRecentSearch(search);
+    // setShowRecentSearches(false);
   };
 
   // const handleRecentSearchSelect = (searchText) => {
@@ -223,10 +181,10 @@ const Home = () => {
 
   const clearSearch = () => {
     setSearch('');
-    // setSelectedCategory('');
-    console.log('Clear search call');
-    if (selectedCategory) { var param = { 'category': selectedCategory } }
-    fetchProducts(true, param);
+    setSelectedCategory('');
+    console.log('Search call');
+    // setShowRecentSearches(false);
+    fetchProducts(1, true);
   };
 
   const renderProductItem = ({ item }) => (

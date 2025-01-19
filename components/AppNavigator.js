@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import all necessary components
 import Home from './Home';
+import FilterScreen from './FilterScreen';
 import ProductDetails from './ProductDetailsPage';
 import FullScreenMap from './FullScreenMap';
 import ImageViewer from './ImageViewer';
@@ -67,6 +68,7 @@ const AppNavigator = () => {
     <Stack.Navigator initialRouteName="{initialRouteName}" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Home" component={Home} />
+      <Stack.Screen name="FilterScreen" component={FilterScreen} />
       <Stack.Screen name="ProductDetails" component={ProductDetails} />
       <Stack.Screen name="FullScreenMap" component={FullScreenMap} />
       <Stack.Screen name="ImageViewer" component={ImageViewer} />

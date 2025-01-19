@@ -38,6 +38,7 @@ const LocationPicker = ({ navigation }) => {
     };
 
     const updateLocation = (newLatitude, newLongitude) => {
+        console.log('newLatitude-', newLatitude);
         setLocation({
             latitude: newLatitude,
             longitude: newLongitude,
@@ -66,6 +67,7 @@ const LocationPicker = ({ navigation }) => {
                 <GooglePlacesAutocomplete
                     placeholder="Search for an address"
                     onPress={(data, details = null) => {
+                        console.log('details::: ', details);
                         if (details) {
                             updateLocation(details.geometry.location.lat, details.geometry.location.lng);
                         }

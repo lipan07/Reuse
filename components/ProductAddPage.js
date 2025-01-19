@@ -50,10 +50,10 @@ const ProductAddPage = () => {
       // Navigate based on the guard_name of the category
       switch (category?.guard_name) {
         case 'cars':
-          navigation.navigate('AddCarForm', { category });
+          navigation.navigate('AddCarForm', { category, subcategory: category });
           break; // Ensure to break the case to avoid fall-through
         case 'mobiles':
-          navigation.navigate('AddMobileTablets', { category });
+          navigation.navigate('AddMobileTablets', { category, subcategory: category });
           break; // Ensure to break the case to avoid fall-through
         default:
           // Optionally handle other cases or provide feedback

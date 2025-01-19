@@ -2,9 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Import heart icon
 import MapView, { Marker } from 'react-native-maps';
 import BottomNavBar from './BottomNavBar';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Import heart icon
+import Car from './ProductDetails/Car';
+import Mobile from './ProductDetails/Mobile';
+import Bycycle from './ProductDetails/Bycycle';
+import CleaningPestControl from './ProductDetails/CleaningPestControl';
+import CommercialHeavyMachinery from './ProductDetails/CommercialHeavyMachinery';
+import EducationClasses from './ProductDetails/EducationClasses';
+import Electronics from './ProductDetails/Electronics';
+import HomeRenovation from './ProductDetails/HomeRenovation';
+import HouseApartment from './ProductDetails/HouseApartment';
+import Job from './ProductDetails/Job';
+import LandPlot from './ProductDetails/LandPlot';
+import LegalService from './ProductDetails/LegalService';
+import Motorcycle from './ProductDetails/Motorcycle';
+import PgGuestHouse from './ProductDetails/PgGuestHouse';
+import Scooter from './ProductDetails/Scooter';
+import ToursTravel from './ProductDetails/ToursTravel';
+import VehicleSparePart from './ProductDetails/VehicleSparePart';
+import Others from './ProductDetails/Others';
 
 const ProductDetails = () => {
     const [buyerId, setBuyerId] = useState(null);
@@ -12,6 +30,7 @@ const ProductDetails = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const { product } = route.params;
+    console.log(JSON.stringify(product, null, 2));
 
     useEffect(() => {
         const loadBuyerId = async () => {
@@ -77,6 +96,92 @@ const ProductDetails = () => {
         });
     };
 
+    const renderDetails = () => {
+        switch (product.category_id) {
+            case 1:
+                return <Car product={product} />
+            case 3:
+                return <HouseApartment product={product} />
+            case 4:
+                return <LandPlot product={product} />
+            case 5:
+                return <PgGuestHouse product={product} />
+            case 7:
+                return <Mobile product={product} />
+            case 27:
+                return <Bycycle product={product} />
+            case 72:
+                return <CleaningPestControl product={product} />
+            case 43:
+                return <CommercialHeavyMachinery product={product} />
+            case 67:
+                return <EducationClasses product={product} />
+            case 69:
+                return <Electronics product={product} />
+            case 71:
+                return <HomeRenovation product={product} />
+            case 9:
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+            case 16:
+            case 17:
+            case 18:
+            case 19:
+            case 20:
+            case 21:
+            case 22:
+            case 23:
+                return <Job product={product} />
+            case 73:
+                return <LegalService product={product} />
+            case 25:
+                return <Motorcycle product={product} />
+            case 26:
+                return <Scooter product={product} />
+            case 68:
+                return <ToursTravel product={product} />
+            case 41:
+                return <VehicleSparePart product={product} />
+            case 38:
+            case 30:
+            case 31:
+            case 32:
+            case 33:
+            case 34:
+            case 35:
+            case 36:
+            case 37:
+            case 46:
+            case 47:
+            case 48:
+            case 49:
+            case 50:
+            case 52:
+            case 53:
+            case 54:
+            case 55:
+            case 56:
+            case 57:
+            case 58:
+            case 59:
+            case 59:
+            case 60:
+            case 61:
+            case 62:
+            case 63:
+            case 64:
+            case 65:
+            case 75:
+            case 74:
+            case 44:
+                return <Others product={product} />
+        }
+    };
+
     return (
         <View style={styles.container}>
             <ScrollView>
@@ -105,9 +210,8 @@ const ProductDetails = () => {
                             />
                         </TouchableOpacity>
                     </View>
-                    <Text style={styles.productTitle}>{product.title}</Text>
-                    <Text style={styles.description}>{product.post_details.description}</Text>
-                    <Text style={styles.price}>Price: ${product.post_details.amount}</Text>
+                    {renderDetails()}
+
                 </View>
 
                 <View style={styles.detailsCard}>
