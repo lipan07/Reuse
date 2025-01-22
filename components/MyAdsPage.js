@@ -2,14 +2,74 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
 import BottomNavBar from './BottomNavBar';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import the icon library
-import { BASE_URL, TOKEN } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
 
 const MyAdsPage = ({ navigation }) => {
   const [products, setProducts] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isPopupVisible, setPopupVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleteConfirmVisible, setDeleteConfirmVisible] = useState(false); // State for delete confirmation modal
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    const token = await AsyncStorage.getItem('authToken');
+    try {
+      const response = await fetch(`${process.env.BASE_URL}/my-post`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const jsonResponse = await response.json();
+      setProducts(jsonResponse.data || []);
+    } catch (error) {
+      console.error("Failed to load products", error);
+      Dialog.show({
+        type: ALERT_TYPE.ERROR,
+        title: 'Error',
+        textBody: 'Failed to load products.',
+        button: 'Try again',
+        onPressButton: fetchProducts,
+      });
+    }
+  };
+
+  const deleteProduct = async () => {
+    const token = await AsyncStorage.getItem('authToken');
+    try {
+      const response = await fetch(`${process.env.BASE_URL}/posts/${selectedProduct.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        setProducts(products.filter(item => item.id !== selectedProduct.id));
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Post deleted successfully.',
+          button: 'OK',
+        });
+      } else {
+        throw new Error('Failed to delete the post');
+      }
+    } catch (error) {
+      console.error("Delete failed", error);
+      Dialog.show({
+        type: ALERT_TYPE.ERROR,
+        title: 'Error',
+        textBody: 'Failed to delete the post.',
+        button: 'Try again',
+      });
+    }
+  };
 
   const showPopup = (item) => {
     setSelectedProduct(item);
@@ -20,48 +80,19 @@ const MyAdsPage = ({ navigation }) => {
     setPopupVisible(false);
   };
 
-  const fetchProducts = async (page, reset = false) => {
-    setIsLoading(true);
-    const apiUrl = `${BASE_URL}/my-post?page=${page}`;
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", 'Bearer ' + TOKEN);
-
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
-
-    try {
-      const response = await fetch(apiUrl, requestOptions);
-      const jsonResponse = await response.json();
-      if (page == 1) {
-        setProducts([]);
-      }
-
-      if (reset) {
-        setProducts(jsonResponse.data);
-      } else {
-        setProducts(prevProducts => [...prevProducts, ...jsonResponse.data]);
-      }
-
-      setCurrentPage(page);
-    } catch (error) {
-      console.error("Failed to load products", error);
-    } finally {
-      setIsLoading(false);
-    }
+  const showDeleteConfirmModal = () => {
+    setDeleteConfirmVisible(true);
   };
 
-  useEffect(() => {
-    fetchProducts(currentPage);
-  }, []);
-
-  const handleScrollEndReached = () => {
-    if (!isLoading) {
-      fetchProducts(currentPage + 1);
-    }
+  const hideDeleteConfirmModal = () => {
+    setDeleteConfirmVisible(false);
   };
+
+  const confirmDelete = () => {
+    hideDeleteConfirmModal();
+    deleteProduct();
+  };
+
   const categoryComponentMap = {
     'cars': 'AddCarForm',
     'houses_apartments': 'AddHousesApartments',
@@ -143,7 +174,7 @@ const MyAdsPage = ({ navigation }) => {
     <TouchableOpacity style={styles.productItem} onPress={() => showPopup(item)}>
       <Image source={{ uri: item.images[0] }} style={styles.productImage} />
       <View style={styles.productDetails}>
-        <Text style={styles.productName}>{item.post_details.title}</Text>
+        <Text style={styles.productName}>{item.title}</Text>
         <Text style={styles.productDesc}>{item.post_details.description}</Text>
         <Text style={styles.price}>Price: ${item.post_details.amount}</Text>
       </View>
@@ -158,35 +189,89 @@ const MyAdsPage = ({ navigation }) => {
         renderItem={renderProductItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.productList}
-        onEndReached={handleScrollEndReached}
-        onEndReachedThreshold={0.1}
       />
       <BottomNavBar navigation={navigation} />
-      <Modal visible={isPopupVisible} transparent={true} animationType="slide">
+
+      {/* Action Modal */}
+      <Modal
+        visible={isPopupVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={hidePopup}
+      >
         <TouchableWithoutFeedback onPress={hidePopup}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.popupContainer}>
                 <Text style={styles.popupTitle}>Choose an option:</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('ProductDetails', { product: selectedProduct })}>
+                <TouchableOpacity
+                  onPress={() => {
+                    hidePopup();
+                    setTimeout(() => {
+                      navigation.navigate('ProductDetails', { product: selectedProduct });
+                    }, 300);
+                  }}
+                >
                   <Text style={styles.popupOption}>Details</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  // Navigate to the AddOthers component with selectedProduct for editing
-                  const editComponent = getComponentForCategory(selectedProduct.category.guard_name);
-                  navigation.navigate(editComponent, { category: [], subcategory: selectedProduct.category, product: selectedProduct });
-                  hidePopup(); // Hide the popup after navigation
-                }}>
+                <View style={styles.separator} />
+                <TouchableOpacity
+                  onPress={() => {
+                    hidePopup();
+                    setTimeout(() => {
+                      navigation.navigate('MyFollowersPage', { product: selectedProduct });
+                    }, 300);
+                  }}
+                >
+                  <Text style={styles.popupOption}>Followers</Text>
+                </TouchableOpacity>
+                <View style={styles.separator} />
+                <TouchableOpacity
+                  onPress={() => {
+                    hidePopup();
+                    setTimeout(() => {
+                      const editComponent = getComponentForCategory(selectedProduct.category.guard_name);
+                      navigation.navigate(editComponent, { category: [], subcategory: selectedProduct.category, product: selectedProduct });
+                    }, 300);
+                  }}
+                >
                   <Text style={styles.popupOption}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {/* Delete functionality */ }}>
-                  <Text style={styles.popupOption}>Delete</Text>
+                <View style={styles.separator} />
+                <TouchableOpacity
+                  onPress={() => {
+                    hidePopup();
+                    showDeleteConfirmModal();
+                  }}
+                >
+                  <Text style={[styles.popupOption, styles.deleteOption]}>Delete</Text>
                 </TouchableOpacity>
-                {/* <TouchableOpacity onPress={hidePopup}>
-            <Text style={styles.popupOptionClose}>Close</Text>
-          </TouchableOpacity> */}
               </View>
             </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={isDeleteConfirmVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={hideDeleteConfirmModal}
+      >
+        <TouchableWithoutFeedback onPress={hideDeleteConfirmModal}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.confirmContainer}>
+              <Text style={styles.confirmTitle}>Are you sure you want to delete this post?</Text>
+              <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.cancelButton} onPress={hideDeleteConfirmModal}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.confirmButton} onPress={confirmDelete}>
+                  <Text style={styles.confirmButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -225,46 +310,98 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   productDesc: {
-    // fontWeight: 'bold',
     fontSize: 15,
-    color: 'grey'
+    color: 'grey',
   },
   price: {
     fontSize: 14,
     color: 'green',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#e4f0e6', // Make sure this color is visible
+    marginVertical: 7, // Adjust margin for spacing
+    width: '40%', // Ensure it takes the full width of the parent container
   },
   arrowIcon: {
     marginLeft: 10,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Slightly more opaque background
     justifyContent: 'center',
     alignItems: 'center',
   },
   popupContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    padding: 25,
+    borderRadius: 15,
     width: '80%',
     elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    flexDirection: 'column', // Ensures that elements are arranged vertically
+    alignItems: 'center', // Center content inside the modal
   },
   popupTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
   },
   popupOption: {
-    marginVertical: 10,
+    marginVertical: 12,
     fontSize: 16,
+    textAlign: 'center',
+    color: '#007BFF',
+    fontWeight: '500',
+    flexDirection: 'row',
+    alignItems: 'center', // Align the icon and text horizontally
+  },
+  deleteOption: {
+    color: '#FF5C5C', // Red color for delete option
+  },
+  confirmContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '80%',
+  },
+  confirmTitle: {
+    fontSize: 18,
+    marginBottom: 20,
     textAlign: 'center',
   },
-  popupOptionClose: {
-    marginVertical: 10,
-    fontSize: 16,
-    textAlign: 'center',
-    color: 'red',
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    marginRight: 10,
+    padding: 10,
+    backgroundColor: '#ccc',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  confirmButton: {
+    flex: 1,
+    marginLeft: 10,
+    padding: 10,
+    backgroundColor: '#d9534f',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#000',
+  },
+  confirmButtonText: {
+    color: '#fff',
   },
 });
 

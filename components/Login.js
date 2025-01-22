@@ -4,7 +4,6 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
 import { useNavigation } from '@react-navigation/native';
-import { BASE_URL, TOKEN } from '@env';
 
 const Login = () => {
    const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -33,7 +32,7 @@ const Login = () => {
    const handleOtpSubmit = async () => {
       try {
          // Make API request to verify OTP
-         const response = await fetch(`${BASE_URL}/login`, {
+         const response = await fetch(`${process.env.BASE_URL}/login`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',

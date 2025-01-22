@@ -1,99 +1,54 @@
-import React, { useState } from 'react';
-import { View, Modal, Image, StyleSheet, TouchableOpacity, Dimensions, Text, Animated } from 'react-native';
-import { GestureHandlerRootView, PanGestureHandler, PinchGestureHandler, State } from 'react-native-gesture-handler';
+import React, { useState, useRef } from 'react';
+import { View, Modal, Image, StyleSheet, TouchableOpacity, Dimensions, Text, Animated, FlatList } from 'react-native';
+import { GestureHandlerRootView, PinchGestureHandler } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
 const ImageViewer = ({ route }) => {
-    const { images, selectedImageIndex } = route.params;
-    const [currentIndex, setCurrentIndex] = useState(selectedImageIndex);
-    const [scale] = useState(new Animated.Value(1)); // Animated value for zoom scaling
-    const [lastScale, setLastScale] = useState(1); // For tracking the scale in zoom gestures
-    const [translateY] = useState(new Animated.Value(0)); // Only translate Y for swipe down
+    const { images } = route.params;
     const navigation = useNavigation();
+    const scales = useRef(images.map(() => new Animated.Value(1)));
 
-    // Handling swipe down
-    const handleSwipe = (event) => {
-        const { translationY } = event.nativeEvent;
-        Animated.timing(translateY, {
-            toValue: translationY > 200 ? height : 0,
-            duration: 300,
-            useNativeDriver: true,
-        }).start(() => {
-            if (translationY > 200) {
-                navigation.navigate('ProductDetailsPage'); // Navigate to product details on swipe down
-            }
+    const handlePinchGesture = (index) => {
+        return Animated.event([{ nativeEvent: { scale: scales.current[index] } }], {
+            useNativeDriver: true
         });
-    };
-
-    // Pinch gesture event handler for zoom
-    const handlePinchGesture = Animated.event([{ nativeEvent: { scale: scale } }], {
-        useNativeDriver: true,
-    });
-
-    // Save the last scale factor after the pinch is complete
-    const handlePinchEnd = () => {
-        scale.flattenOffset(); // Flattens the animation offset to ensure smooth scaling
-        setLastScale(scale.__getValue()); // Store the final zoom scale
-    };
-
-    // Switch to the next image
-    const handleNext = () => {
-        setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
-    };
-
-    // Switch to the previous image
-    const handlePrevious = () => {
-        setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
     };
 
     return (
         <GestureHandlerRootView style={styles.container}>
             <Modal animationType="slide" transparent={true} visible={true}>
                 <View style={styles.modalContainer}>
-                    {/* Pan Gesture for swipe down */}
-                    <PanGestureHandler
-                        onGestureEvent={Animated.event([{ nativeEvent: { translationY: handleSwipe } }], {
-                            useNativeDriver: false,
-                        })}
-                        onHandlerStateChange={(event) => {
-                            if (event.nativeEvent.state === State.END) handleSwipe(event);
-                        }}
-                    >
-                        <Animated.View style={[styles.imageContainer, { transform: [{ translateY }] }]}>
-                            {/* Pinch Gesture for zoom */}
+                    <FlatList
+                        data={images}
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        renderItem={({ item, index }) => (
                             <PinchGestureHandler
-                                onGestureEvent={handlePinchGesture}
-                                onHandlerStateChange={(event) => {
-                                    if (event.nativeEvent.state === State.END) handlePinchEnd();
-                                }}
+                                onGestureEvent={handlePinchGesture(index)}
                             >
-                                <Animated.Image
-                                    source={{ uri: images[currentIndex] }}
-                                    style={[styles.image, { transform: [{ scale: scale }] }]} // Apply zoom scaling
-                                    resizeMode="contain"
-                                />
+                                <Animated.View style={styles.imageContainer}>
+                                    <Animated.Image
+                                        source={{ uri: item }}
+                                        style={[styles.image, { transform: [{ scale: scales.current[index] }] }]}
+                                        resizeMode="contain"
+                                    />
+                                </Animated.View>
                             </PinchGestureHandler>
-                        </Animated.View>
-                    </PanGestureHandler>
-
-                    {/* Navigation buttons */}
-                    <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-                        <Ionicons name="arrow-forward" size={30} color="white" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
-                        <Ionicons name="arrow-back" size={30} color="white" />
-                    </TouchableOpacity>
-
+                        )}
+                        keyExtractor={(_, index) => String(index)}
+                    />
                     {/* Close button */}
-                    <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-                        <Text style={styles.closeButtonText}>Close</Text>
-                    </TouchableOpacity>
+                    <View style={styles.buttonWrapper}>
+                        <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+                            <Text style={styles.closeButtonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </Modal>
-        </GestureHandlerRootView>
+        </GestureHandlerRootView >
     );
 };
 
@@ -104,14 +59,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     modalContainer: {
+        flex: 1,
         backgroundColor: 'black',
-        height: height,
-        width: width,
         justifyContent: 'center',
     },
     imageContainer: {
-        width: '100%',
-        height: '100%',
+        width,
+        height,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -119,30 +73,24 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
-    closeButton: {
+    buttonWrapper: {
         position: 'absolute',
-        bottom: 20,
-        left: 30,
-        right: 30,
-        paddingVertical: 10,
-        borderRadius: 25,
-        backgroundColor: 'rgba(128, 128, 128, 0.7)',
+        bottom: 0,
+        left: 0,
+        right: 0,
+    },
+    closeButton: {
+        width: '100%',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        paddingVertical: 15,
         justifyContent: 'center',
         alignItems: 'center',
     },
     closeButtonText: {
-        color: 'white',
+        color: '#000',
+        fontSize: 18,
+        fontWeight: 'bold',
         textAlign: 'center',
-    },
-    nextButton: {
-        position: 'absolute',
-        top: '50%',
-        right: 20,
-    },
-    previousButton: {
-        position: 'absolute',
-        top: '50%',
-        left: 20,
     },
 });
 

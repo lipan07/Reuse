@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddShopOffices = ({ route }) => {
     const { category, subcategory, product } = route.params;
     const [formData, setFormData] = useState({
-        furnishing: '',
-        constructionStatus: '',
-        listedBy: '',
-        carParking: '',
+        furnishing: 'Unfurnished',
+        constructionStatus: 'Ready to Move',
+        listedBy: 'Owner',
+        carParking: '1',
         superBuiltUpArea: '',
         carpetArea: '',
         maintenance: '',
@@ -35,7 +36,7 @@ const AddShopOffices = ({ route }) => {
                 maintenance: product.post_details.maintenance ?? '',
                 washroom: product.post_details.washroom ?? '',
                 projectName: product.post_details.project_name ?? '',
-                adTitle: product.post_details.title ?? '',
+                adTitle: product.title ?? '',
                 description: product.post_details.description ?? '',
                 amount: product.post_details.amount ?? '',
                 images: product.images || [], // Set existing images
@@ -82,7 +83,7 @@ const AddShopOffices = ({ route }) => {
     };
 
     return (
-        <>
+        <AlertNotificationRoot>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
@@ -139,7 +140,7 @@ const AddShopOffices = ({ route }) => {
                     {/* Car Parking */}
                     <Text style={styles.label}>Car Parking *</Text>
                     <View style={styles.optionContainer}>
-                        {['1', '2', '3', '3+'].map((option) => (
+                        {['0', '1', '2', '3', '3+'].map((option) => (
                             <TouchableOpacity
                                 key={option}
                                 style={[styles.optionButton, formData.carParking === option && styles.selectedOption]}
@@ -247,7 +248,7 @@ const AddShopOffices = ({ route }) => {
                     <Button title="Submit" onPress={handleSubmit} />
                 </View>
             </KeyboardAvoidingView>
-        </>
+        </AlertNotificationRoot>
     );
 };
 

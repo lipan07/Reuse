@@ -3,19 +3,20 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddHousesApartments = ({ route }) => {
   const { category, subcategory, product } = route.params;
   console.log(product);
   const [formData, setFormData] = useState({
-    propertyType: '',
-    bedroom: '',
-    bathroom: '',
-    furnishing: '',
-    constructionStatus: '',
-    listedBy: '',
-    carParking: '',
-    facing: '',
+    propertyType: 'Apartments',
+    bedroom: '2',
+    bathroom: '1',
+    furnishing: 'Unfurnished',
+    constructionStatus: 'Ready to Move',
+    listedBy: 'Owner',
+    carParking: '1',
+    facing: 'East',
     superBuiltupArea: '',
     carpetArea: '',
     maintenance: '',
@@ -34,7 +35,7 @@ const AddHousesApartments = ({ route }) => {
       // Populate form fields with existing product data
       setFormData({
         id: product.id,
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         propertyType: product.post_details.property_type ?? '',
@@ -94,7 +95,7 @@ const AddHousesApartments = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -151,21 +152,19 @@ const AddHousesApartments = ({ route }) => {
           {/* Facing */}
           <View style={styles.container}>
             <Text style={styles.label}>Facing *</Text>
-            <Picker
-              selectedValue={formData.facing}
-              onValueChange={(value) => handleChange('facing', value)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select facing" value="" />
-              <Picker.Item label="East" value="East" />
-              <Picker.Item label="North" value="North" />
-              <Picker.Item label="South" value="South" />
-              <Picker.Item label="West" value="West" />
-              <Picker.Item label="North-East" value="North-East" />
-              <Picker.Item label="North-West" value="North-West" />
-              <Picker.Item label="South-East" value="South-East" />
-              <Picker.Item label="South-West" value="South-West" />
-            </Picker>
+            <View style={styles.optionContainer}>
+              {['East', 'North', 'South', 'West', 'North-East', 'North-West', 'South-East', 'South-West'].map((facingOption) => (
+                <TouchableOpacity
+                  key={facingOption}
+                  style={[styles.optionButton, formData.facing === facingOption && styles.selectedOption]}
+                  onPress={() => handleChange('facing', facingOption)}
+                >
+                  <Text style={formData.facing === facingOption ? styles.selectedText : styles.optionText}>
+                    {facingOption}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Furnishing Selection */}
@@ -298,7 +297,7 @@ const AddHousesApartments = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

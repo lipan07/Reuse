@@ -13,14 +13,22 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyDrO2-t_JMcXIqCEC6kMkoU6jABxIIN8_M" 
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/recycle.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.lipan09.Shanidev"
+      "package": "com.lipan09.Shanidev",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDrO2-t_JMcXIqCEC6kMkoU6jABxIIN8_M"
+        }
+      }
     },
     "web": {
       "bundler": "metro",

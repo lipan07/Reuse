@@ -3,11 +3,12 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddMobileTablets = ({ route }) => {
   const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
-    brand: '',
+    brand: 'xiaomi',
     adTitle: '',
     description: '',
     amount: '',
@@ -20,7 +21,7 @@ const AddMobileTablets = ({ route }) => {
       setFormData({
         id: product.id,
         brand: product.post_details.brand ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
@@ -62,7 +63,7 @@ const AddMobileTablets = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -80,13 +81,13 @@ const AddMobileTablets = ({ route }) => {
             <Picker.Item label="Select Brand" value="" />
             <Picker.Item label="iPhone" value="iphone" />
             <Picker.Item label="Samsung" value="samsung" />
-            <Picker.Item label="Mi" value="mi-phone" />
-            <Picker.Item label="Vivo" value="vivo-phone" />
-            <Picker.Item label="Oppo" value="oppo-phone" />
+            <Picker.Item label="Xiaomi" value="xiaomi" />
+            <Picker.Item label="Vivo" value="vivo" />
+            <Picker.Item label="Oppo" value="oppo" />
             <Picker.Item label="Realme" value="realme" />
             <Picker.Item label="Asus" value="asus" />
-            <Picker.Item label="BlackBerry" value="phones-blackberry" />
-            <Picker.Item label="Gionee" value="gionee-phone" />
+            <Picker.Item label="BlackBerry" value="blackberry" />
+            <Picker.Item label="Gionee" value="gionee" />
             <Picker.Item label="Google Pixel" value="google-pixel" />
             <Picker.Item label="Honor" value="honor" />
             <Picker.Item label="HTC" value="htc" />
@@ -95,10 +96,10 @@ const AddMobileTablets = ({ route }) => {
             <Picker.Item label="Intex" value="intex" />
             <Picker.Item label="Karbonn" value="karbonn" />
             <Picker.Item label="Lava" value="lava" />
-            <Picker.Item label="Lenovo" value="lenovo-mobile" />
+            <Picker.Item label="Lenovo" value="lenovo" />
             <Picker.Item label="LG" value="lg" />
             <Picker.Item label="Micromax" value="micromax" />
-            <Picker.Item label="Motorola" value="motorola-phone" />
+            <Picker.Item label="Motorola" value="motorola" />
             <Picker.Item label="Nokia" value="nokia" />
             <Picker.Item label="One Plus" value="one-plus" />
             <Picker.Item label="Sony" value="sony" />
@@ -154,7 +155,7 @@ const AddMobileTablets = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

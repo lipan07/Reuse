@@ -3,12 +3,13 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddJob = ({ route }) => {
   const { category, subcategory, product } = route.params;
   const [formData, setFormData] = useState({
-    salaryPeriod: '',
-    positionType: '',
+    salaryPeriod: 'Monthly',
+    positionType: 'Full-time',
     salaryFrom: '',
     salaryTo: '',
     adTitle: '',
@@ -25,7 +26,7 @@ const AddJob = ({ route }) => {
         positionType: product.post_details.position_type ?? '',
         salaryFrom: product.post_details.salary_from ?? '',
         salaryTo: product.post_details.salary_to ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         images: product.images || [], // Set existing images
       });
@@ -73,7 +74,7 @@ const AddJob = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -167,7 +168,7 @@ const AddJob = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

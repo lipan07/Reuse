@@ -3,7 +3,8 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
-import { BASE_URL, TOKEN } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddBycycles = ({ route }) => {
   const { category, subcategory, product } = route.params;
@@ -22,7 +23,7 @@ const AddBycycles = ({ route }) => {
       setFormData({
         id: product.id,
         brand: product.post_details.brand ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
@@ -55,12 +56,13 @@ const AddBycycles = ({ route }) => {
 
   useEffect(() => {
     const getBycycleBrand = async () => {
+      const token = await AsyncStorage.getItem('authToken');
       try {
-        const response = await fetch(`${BASE_URL}/bycycle/brand`, {
+        const response = await fetch(`${process.env.BASE_URL}/bycycle/brand`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${TOKEN}`
+            'Authorization': `Bearer ${token}`
           },
         });
         const responseData = await response.json();
@@ -87,7 +89,7 @@ const AddBycycles = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -156,7 +158,7 @@ const AddBycycles = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

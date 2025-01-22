@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddCleaningPestControl = ({ route }) => {
   const { category, subcategory, product } = route.params;
@@ -19,7 +20,7 @@ const AddCleaningPestControl = ({ route }) => {
       setFormData({
         id: product.id,
         type: product.post_details.type ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
@@ -68,7 +69,7 @@ const AddCleaningPestControl = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -128,7 +129,7 @@ const AddCleaningPestControl = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddOthers = ({ route }) => {
   const { category, subcategory, product } = route.params; // Get product for editing
@@ -17,7 +18,7 @@ const AddOthers = ({ route }) => {
       // Populate form fields with existing product data
       setFormData({
         id: product.id,
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
@@ -59,7 +60,7 @@ const AddOthers = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -115,7 +116,7 @@ const AddOthers = ({ route }) => {
           <Button title={product ? "Update" : "Submit"} onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

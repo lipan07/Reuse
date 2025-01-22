@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import all necessary components
 import Home from './Home';
+import FilterScreen from './FilterScreen';
 import ProductDetails from './ProductDetailsPage';
 import FullScreenMap from './FullScreenMap';
 import ImageViewer from './ImageViewer';
@@ -14,6 +15,9 @@ import Profile from './Profile';
 import Login from './Login';
 import EditProfilePage from './EditProfilePage';
 import AccountPage from './AccountPage';
+import FollowersPage from './FollowersPage';
+import MyFollowersPage from './MyFollowersPage';
+import FollowingPage from './FollowingPage';
 import MyNetwork from './MyNetwork';
 import PackagePage from './PackagePage';
 import Settings from './Settings';
@@ -41,7 +45,8 @@ import AddLegalDocumentationServices from './AddProduct/AddLegalDocumentationSer
 import AddVehicleSpareParts from './AddProduct/AddVehicleSpareParts';
 import AddCommercialHeavyVehicle from './AddProduct/AddCommercialHeavyVehicle';
 import AddCommercialHeavyMachinery from './AddProduct/AddCommercialHeavyMachinery';
-
+import LocationPicker from './LocationPicker';
+import ChangePassword from './ChangePassword';
 // Create Stack Navigators
 const Stack = createStackNavigator();
 
@@ -63,6 +68,7 @@ const AppNavigator = () => {
     <Stack.Navigator initialRouteName="{initialRouteName}" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Home" component={Home} />
+      <Stack.Screen name="FilterScreen" component={FilterScreen} />
       <Stack.Screen name="ProductDetails" component={ProductDetails} />
       <Stack.Screen name="FullScreenMap" component={FullScreenMap} />
       <Stack.Screen name="ImageViewer" component={ImageViewer} />
@@ -73,9 +79,14 @@ const AppNavigator = () => {
       <Stack.Screen name="EditProfilePage" component={EditProfilePage} />
       <Stack.Screen name="AccountPage" component={AccountPage} />
       <Stack.Screen name="MyNetwork" component={MyNetwork} />
+      <Stack.Screen name="FollowersPage" component={FollowersPage} />
+      <Stack.Screen name="MyFollowersPage" component={MyFollowersPage} />
+      <Stack.Screen name="FollowingPage" component={FollowingPage} />
       <Stack.Screen name="PackagePage" component={PackagePage} />
       <Stack.Screen name="Settings" component={Settings} />
+      <Stack.Screen name="ChangePassword" component={ChangePassword} />
       <Stack.Screen name="CompanyDetailsPage" component={CompanyDetailsPage} />
+      <Stack.Screen name="LocationPicker" component={LocationPicker} />
       {/* Add product section */}
       <Stack.Screen name="ProductAddPage" component={ProductAddPage} />
       <Stack.Screen name="ProductForm" component={ProductForm} />

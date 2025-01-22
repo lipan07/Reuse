@@ -3,12 +3,13 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddLandPlots = ({ route }) => {
   const { category, subcategory, product } = route.params;
   const [images, setImages] = useState([]);
   const [formData, setFormData] = useState({
-    listedBy: '',
+    listedBy: 'Owner',
     plotArea: '',
     length: '',
     breadth: '',
@@ -16,7 +17,7 @@ const AddLandPlots = ({ route }) => {
     adTitle: '',
     description: '',
     amount: '',
-    facing: '',
+    facing: 'East',
     images: [],
   });
 
@@ -31,7 +32,7 @@ const AddLandPlots = ({ route }) => {
         breadth: product.post_details.breadth ?? '',
         projectName: product.post_details.project_name ?? '',
         facing: product.post_details.facing ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         images: product.images || [], // Set existing images
       });
@@ -73,7 +74,7 @@ const AddLandPlots = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
@@ -90,6 +91,22 @@ const AddLandPlots = ({ route }) => {
               >
                 <Text style={formData.listedBy === listedByOption ? styles.selectedText : styles.optionText}>
                   {listedByOption}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Facing */}
+          <Text style={styles.label}>Facing *</Text>
+          <View style={styles.optionContainer}>
+            {['East', 'North', 'South', 'West', 'North-East', 'North-West', 'South-East', 'South-West'].map((facingOption) => (
+              <TouchableOpacity
+                key={facingOption}
+                style={[styles.optionButton, formData.facing === facingOption && styles.selectedOption]}
+                onPress={() => handleChange('facing', facingOption)}
+              >
+                <Text style={formData.facing === facingOption ? styles.selectedText : styles.optionText}>
+                  {facingOption}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -163,26 +180,6 @@ const AddLandPlots = ({ route }) => {
             onChangeText={(value) => handleChange('amount', value)}
           />
 
-          {/* Facing */}
-          <View style={styles.container}>
-            <Text style={styles.label}>Facing *</Text>
-            <Picker
-              selectedValue={formData.facing}
-              onValueChange={(value) => handleChange('facing', value)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select facing" value="" />
-              <Picker.Item label="East" value="East" />
-              <Picker.Item label="North" value="North" />
-              <Picker.Item label="South" value="South" />
-              <Picker.Item label="West" value="West" />
-              <Picker.Item label="North-East" value="North-East" />
-              <Picker.Item label="North-West" value="North-West" />
-              <Picker.Item label="South-East" value="South-East" />
-              <Picker.Item label="South-West" value="South-West" />
-            </Picker>
-          </View>
-
           {/* Image Picker */}
           <Text style={styles.label}>Select Images</Text>
           <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
@@ -202,7 +199,7 @@ const AddLandPlots = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

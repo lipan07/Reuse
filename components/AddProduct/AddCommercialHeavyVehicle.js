@@ -3,16 +3,18 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddCommercialHeavyVehicle = ({ route }) => {
   const { category, subcategory, product } = route.params;
+  const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     brand: '',
-    year: '',
-    fuelType: '',
-    condition: '',
-    owners: '',
-    listedBy: '',
+    year: currentYear,
+    fuelType: 'Diesel',
+    conditionType: 'Used',
+    owners: '1st',
+    listedBy: 'Owner',
     adTitle: '',
     description: '',
     amount: '',
@@ -30,7 +32,7 @@ const AddCommercialHeavyVehicle = ({ route }) => {
         condition: product.post_details.condition ?? '',
         owners: product.post_details.owner ?? '',
         listedBy: product.post_details.listed_by ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
@@ -43,6 +45,14 @@ const AddCommercialHeavyVehicle = ({ route }) => {
       ...formData,
       [name]: value,
     });
+  };
+
+  const generateYears = () => {
+    const years = [];
+    for (let year = currentYear; year >= 1900; year--) {
+      years.push(year.toString());
+    }
+    return years;
   };
 
   const handleFuelSelection = (type) => {
@@ -88,7 +98,7 @@ const AddCommercialHeavyVehicle = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -131,15 +141,21 @@ const AddCommercialHeavyVehicle = ({ route }) => {
             ))}
           </View>
 
-          {/* Year Field */}
+          {/* Year Dropdown */}
           <Text style={styles.label}>Year *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Year"
-            keyboardType="numeric"
-            value={formData.year}
-            onChangeText={(value) => handleChange('year', value)}
-          />
+          <Picker
+            selectedValue={formData.year} // Tracks the selected value
+            onValueChange={(value) => handleChange('year', value)} // Updates the selected value
+            style={styles.picker}
+          >
+            {generateYears().map((year) => (
+              <Picker.Item
+                key={year}
+                label={year}
+                value={year}
+              />
+            ))}
+          </Picker>
 
           {/* Fuel Type Selection */}
           <Text style={styles.label}>Fuel Type *</Text>
@@ -242,7 +258,7 @@ const AddCommercialHeavyVehicle = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

@@ -1,94 +1,169 @@
-// CompanyDetailsPage.js
-import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    Image,
+    StyleSheet,
+    ScrollView,
+    TouchableOpacity,
+    ActivityIndicator,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Dialog, ALERT_TYPE } from 'react-native-alert-notification';
 
 const CompanyDetailsPage = ({ route }) => {
-    const { companyName } = route.params;
+    const { userId } = route.params; // Assuming companyId is passed for API calls
+    const [companyDetails, setCompanyDetails] = useState(null); // State to hold company details
+    const [isLoading, setIsLoading] = useState(true); // Loading state
+    const [isFollowing, setIsFollowing] = useState(false); // State to track follow status
 
-    // Dummy data for demonstration
-    const companyDetails = {
-        logo: require('../assets/icon.png'),
-        about: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce aliquet tellus id arcu lobortis, sit amet ultricies ex convallis. Nam ut nisi nec ligula accumsan lobortis. Maecenas ac est odio. Donec id pharetra mauris. Nulla porttitor diam in sollicitudin.',
-        rating: 4.5,
-        reviews: 100,
-        address: '123 Main Street, Cityville, State, Zip',
-        email: 'info@example.com',
-        phone: '123-456-7890',
-        website: 'www.example.com',
-        dummyReviews: [
-            {
-                id: 1,
-                user: 'John Doe',
-                comment: 'Great company, excellent service!',
-                rating: 5,
-            },
-            {
-                id: 2,
-                user: 'Jane Smith',
-                comment: 'Good products, fast delivery.',
-                rating: 4,
-            },
-            {
-                id: 3,
-                user: 'Jane Smith',
-                comment: 'Good products, fast delivery.',
-                rating: 4,
-            },
-            {
-                id: 4,
-                user: 'Jane Smith',
-                comment: 'Good products, fast delivery.',
-                rating: 4,
-            },
-            // Add more dummy reviews as needed
-        ],
+    const dummyReviews = [
+        { id: 1, user: 'John Doe', comment: 'Great company, excellent service!', rating: 5 },
+        { id: 2, user: 'Jane Smith', comment: 'Good products, fast delivery.', rating: 4 },
+    ];
+
+    // Fetch user details on component mount
+    useEffect(() => {
+        const fetchCompanyDetails = async () => {
+            setIsLoading(true);
+            const token = await AsyncStorage.getItem('authToken');
+
+            try {
+                console.log(`${process.env.BASE_URL}/users/${userId}`);
+                const response = await fetch(`${process.env.BASE_URL}/users/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const result = await response.json();
+                console.log(result);
+                if (response.ok) {
+                    setCompanyDetails(result.data); // Update company details
+                    setIsFollowing(result.data.is_following); // Update follow status
+                } else {
+                    console.error('Failed to fetch company details:', result.message);
+                }
+            } catch (error) {
+                console.error('Error fetching company details:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCompanyDetails();
+    }, [userId]);
+
+    // Handle Follow/Unfollow logic
+    const handleFollowToggle = async () => {
+        const token = await AsyncStorage.getItem('authToken');
+        console.log(`${process.env.BASE_URL}/follow-user`);
+        console.log(companyDetails.id);
+        try {
+            const response = await fetch(`${process.env.BASE_URL}/follow-user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ following_id: companyDetails.id }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                setIsFollowing(!isFollowing); // Toggle follow state
+                Dialog.show({
+                    type: ALERT_TYPE.SUCCESS,
+                    title: isFollowing ? 'Unfollowed' : 'Followed',
+                    textBody: result.message,
+                    button: 'OK',
+                });
+            } else {
+                Dialog.show({
+                    type: ALERT_TYPE.WARNING,
+                    title: 'Warning',
+                    textBody: result.message || 'Something went wrong.',
+                    button: 'OK',
+                });
+            }
+        } catch (error) {
+            Dialog.show({
+                type: ALERT_TYPE.DANGER,
+                title: 'Error',
+                textBody: 'Failed to update follow status. Please try again later.',
+                button: 'OK',
+            });
+        }
     };
+
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#007bff" />
+            </View>
+        );
+    }
+
+    if (!companyDetails) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>Failed to load company details. Please try again later.</Text>
+            </View>
+        );
+    }
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.header}>
-                <Image source={companyDetails.logo} style={styles.logo} />
+                <Image
+                    source={{ uri: companyDetails.logo || 'https://via.placeholder.com/100' }}
+                    style={styles.logo}
+                />
                 <View style={styles.headerText}>
-                    <Text style={styles.companyName}>Malaq</Text>
-                    <View style={styles.buttonsContainer}>
-                        <TouchableOpacity style={styles.button}>
-                            <Text style={styles.buttonText}>Follow</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.button}>
-                            <Text style={styles.buttonText}>Visit Website</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <Text style={styles.companyName}>{companyDetails.name || 'N/A'}</Text>
+                    <TouchableOpacity
+                        style={[styles.followButton, isFollowing ? styles.followedButton : styles.unfollowButton]}
+                        onPress={handleFollowToggle}
+                    >
+                        <Text style={styles.followButtonText}>
+                            {isFollowing ? 'Unfollow' : 'Follow'}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </View>
-            <Text style={styles.about}>{companyDetails.about}</Text>
+            <Text style={styles.about}>{companyDetails.about || 'No description available.'}</Text>
             <View style={styles.contactInfo}>
                 <Text style={styles.infoTitle}>Address:</Text>
-                <Text style={styles.infoText}>{companyDetails.address}</Text>
+                <Text style={styles.infoText}>{companyDetails.address || 'N/A'}</Text>
                 <Text style={styles.infoTitle}>Email:</Text>
-                <Text style={styles.infoText}>{companyDetails.email}</Text>
+                <Text style={styles.infoText}>{companyDetails.email || 'N/A'}</Text>
                 <Text style={styles.infoTitle}>Phone:</Text>
-                <Text style={styles.infoText}>{companyDetails.phone}</Text>
+                <Text style={styles.infoText}>{companyDetails.phone_no || 'N/A'}</Text>
                 <Text style={styles.infoTitle}>Website:</Text>
-                <Text style={styles.infoText}>{companyDetails.website}</Text>
+                <Text style={styles.infoText}>{companyDetails.website || 'N/A'}</Text>
             </View>
             <View style={styles.ratingContainer}>
-                <Text style={styles.rating}>Rating: {companyDetails.rating}</Text>
-                <Text style={styles.reviews}>Reviews: {companyDetails.reviews}</Text>
+                <Text style={styles.rating}>
+                    Rating: {companyDetails.rating || 'N/A'} ⭐
+                </Text>
+                <Text style={styles.reviews}>
+                    Reviews: {companyDetails.reviews || 0}
+                </Text>
             </View>
             <View style={styles.reviewsContainer}>
                 <Text style={styles.reviewsTitle}>Recent Reviews:</Text>
-                {companyDetails.dummyReviews.map(review => (
+                {dummyReviews.map((review) => (
                     <View key={review.id} style={styles.reviewItem}>
                         <View style={styles.reviewHeader}>
                             <Text style={styles.reviewUser}>{review.user}</Text>
-                            <Text style={styles.reviewRating}>Rating: {review.rating}</Text>
+                            <Text style={styles.reviewRating}>Rating: {review.rating} ⭐</Text>
                         </View>
                         <Text style={styles.reviewComment}>{review.comment}</Text>
                     </View>
                 ))}
-                {/* <TouchableOpacity style={styles.viewAllButton}>
-                    <Text style={styles.viewAllButtonText}>View All Reviews</Text>
-                </TouchableOpacity> */}
             </View>
         </ScrollView>
     );
@@ -99,6 +174,20 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 20,
         backgroundColor: '#f5f5f5',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        color: '#ff0000',
+        fontSize: 16,
     },
     header: {
         flexDirection: 'row',
@@ -120,17 +209,19 @@ const styles = StyleSheet.create({
         color: '#333',
         marginBottom: 10,
     },
-    buttonsContainer: {
-        flexDirection: 'row',
-    },
-    button: {
+    followButton: {
         paddingHorizontal: 15,
         paddingVertical: 8,
-        backgroundColor: '#007bff',
         borderRadius: 5,
-        marginRight: 10,
+        alignItems: 'center',
     },
-    buttonText: {
+    followedButton: {
+        backgroundColor: '#4caf50', // Green for "Following"
+    },
+    unfollowButton: {
+        backgroundColor: '#007bff', // Blue for "Follow"
+    },
+    followButtonText: {
         color: '#fff',
         fontWeight: 'bold',
     },
@@ -188,17 +279,6 @@ const styles = StyleSheet.create({
     reviewComment: {
         color: '#555',
         marginBottom: 10,
-    },
-    viewAllButton: {
-        backgroundColor: '#007bff',
-        borderRadius: 5,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-    },
-    viewAllButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
     },
 });
 

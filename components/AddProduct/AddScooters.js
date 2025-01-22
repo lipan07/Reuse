@@ -3,15 +3,17 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, ScrollView, Sty
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { submitForm } from '../../service/apiService';
-import { BASE_URL, TOKEN } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
 
 const AddScooters = ({ route }) => {
   const { category, subcategory, product } = route.params;
   const [brands, setBrands] = useState([]);
+  const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     brand: '',
     adTitle: '',
-    year: '',
+    year: currentYear,
     km_driven: '',
     description: '',
     amount: '',
@@ -26,7 +28,7 @@ const AddScooters = ({ route }) => {
         brand: product.post_details.brand ?? '',
         year: product.post_details.year ?? '',
         km_driven: product.post_details.km_driven ?? '',
-        adTitle: product.post_details.title ?? '',
+        adTitle: product.title ?? '',
         description: product.post_details.description ?? '',
         amount: product.post_details.amount ?? '',
         images: product.images || [], // Set existing images
@@ -39,6 +41,14 @@ const AddScooters = ({ route }) => {
       ...formData,
       [name]: value,
     });
+  };
+
+  const generateYears = () => {
+    const years = [];
+    for (let year = currentYear; year >= 1900; year--) {
+      years.push(year.toString());
+    }
+    return years;
   };
 
   const handleImagePick = async () => {
@@ -59,12 +69,13 @@ const AddScooters = ({ route }) => {
 
   useEffect(() => {
     const getScooterBrand = async () => {
+      const token = await AsyncStorage.getItem('authToken');
       try {
-        const response = await fetch(`${BASE_URL}/scooter/brand`, {
+        const response = await fetch(`${process.env.BASE_URL}/scooter/brand`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${TOKEN}`
+            'Authorization': `Bearer ${token}`
           },
         });
         const responseData = await response.json();
@@ -91,7 +102,7 @@ const AddScooters = ({ route }) => {
   };
 
   return (
-    <>
+    <AlertNotificationRoot>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -112,14 +123,22 @@ const AddScooters = ({ route }) => {
             ))}
           </Picker>
 
-          {/* Year Field */}
+          {/* Year Dropdown */}
           <Text style={styles.label}>Year *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter year"
-            value={formData.year}
-            onChangeText={(value) => handleChange('year', value)}
-          />
+          <Picker
+            selectedValue={formData.year} // Tracks the selected value
+            onValueChange={(value) => handleChange('year', value)} // Updates the selected value
+            style={styles.picker}
+          >
+            {generateYears().map((year) => (
+              <Picker.Item
+                key={year}
+                label={year}
+                value={year}
+              />
+            ))}
+          </Picker>
+
           {/* Title Field */}
           <Text style={styles.label}>KM Driven *</Text>
           <TextInput
@@ -176,7 +195,7 @@ const AddScooters = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </>
+    </AlertNotificationRoot>
   );
 };
 

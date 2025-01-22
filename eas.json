@@ -6,15 +6,30 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "BASE_URL": "https://big-brain.co.in/api",
+        "PUSHER_KEY": "79368817dcadd9c47468",
+        "PUSHER_CLUSTER": "ap2"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "BASE_URL": "https://big-brain.co.in/api",
+        "PUSHER_KEY": "79368817dcadd9c47468",
+        "PUSHER_CLUSTER": "ap2"
+      }
     },
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "env": {
+          "BASE_URL": "https://big-brain.co.in/api",
+          "PUSHER_KEY": "79368817dcadd9c47468",
+          "PUSHER_CLUSTER": "ap2"
+        }
       }
     }
   },
