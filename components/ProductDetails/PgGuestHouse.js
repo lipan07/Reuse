@@ -1,88 +1,52 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import styles from '../../assets/css/productDetailsCard.styles';
 
-const PgGuestHouse = ({ product }) => {
+const PgGuestHouse = ({ product, isFollowed, toggleFollow }) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.productTitle}>{product.title}</Text>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>PG Type:</Text>
-                <Text style={styles.value}>{product.post_details.pg_type}</Text>
+            {/* Header with Title and Follow Icon */}
+            <View style={styles.header}>
+                <Text style={styles.productTitle}>{product.title || 'No Title'}</Text>
+                <TouchableOpacity onPress={toggleFollow}>
+                    <Icon
+                        name={isFollowed ? 'heart' : 'heart-outline'}
+                        size={28}
+                        color={isFollowed ? 'red' : 'gray'}
+                        style={styles.heartIcon}
+                    />
+                </TouchableOpacity>
             </View>
 
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Furnishing:</Text>
-                <Text style={styles.value}>{product.post_details.furnishing}</Text>
+            {/* PG Guest House Details */}
+            <View style={styles.detailsContainer}>
+                {renderDetailRow('PG Type', product.post_details?.pg_type)}
+                {renderDetailRow('Furnishing', product.post_details?.furnishing)}
+                {renderDetailRow('Listed By', product.post_details?.listed_by)}
+                {renderDetailRow('Carpet Area', product.post_details?.carpet_area)}
+                {renderDetailRow('Meal Included', product.post_details?.meal_included)}
+                {renderDetailRow('Car Parking', product.post_details?.car_parking)}
             </View>
 
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>ListedBy:</Text>
-                <Text style={styles.value}>{product.post_details.listed_by}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Carpet Area:</Text>
-                <Text style={styles.value}>{product.post_details.carpet_area}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Meal Included:</Text>
-                <Text style={styles.value}>{product.post_details.floor_no}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Car Parking:</Text>
-                <Text style={styles.value}>{product.post_details.car_parking}</Text>
-            </View>
-
+            {/* Description */}
             <View style={styles.descriptionContainer}>
                 <Text style={styles.label}>Description:</Text>
-                <Text style={styles.description}>{product.post_details.description}</Text>
+                <Text style={styles.description}>{product.post_details?.description || 'No description available'}</Text>
             </View>
 
-            <Text style={styles.price}>Price: ${product.post_details.amount}</Text>
+            {/* Price */}
+            <Text style={styles.price}>Price: ${product.post_details?.amount || 'N/A'}</Text>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        padding: 15,
-    },
-    productTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        marginBottom: 8,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginRight: 5,
-    },
-    value: {
-        fontSize: 16,
-        color: '#555',
-    },
-    descriptionContainer: {
-        marginVertical: 10,
-    },
-    description: {
-        fontSize: 15,
-        color: '#555',
-        lineHeight: 20,
-    },
-    price: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: 'green',
-        marginTop: 10,
-    },
-});
+/** Reusable function to render detail rows */
+const renderDetailRow = (label, value) => (
+    <View style={styles.detailRow}>
+        <Text style={styles.label}>{label}:</Text>
+        <Text style={styles.value}>{value || 'N/A'}</Text>
+    </View>
+);
 
 export default PgGuestHouse;

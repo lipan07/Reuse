@@ -116,7 +116,6 @@ const FollowingPage = () => {
         }
     };
 
-
     const renderUserItem = ({ item }) => (
         <>
             <View style={styles.userItem}>
@@ -154,7 +153,7 @@ const FollowingPage = () => {
                             followingFilter === 'Post' && styles.activeSubTabButtonText,
                         ]}
                     >
-                        Post (Following)
+                        Post
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -170,7 +169,7 @@ const FollowingPage = () => {
                             followingFilter === 'Company' && styles.activeSubTabButtonText,
                         ]}
                     >
-                        User/Company (Following)
+                        User/Company
                     </Text>
                 </TouchableOpacity>
             </View>

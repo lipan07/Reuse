@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Import heart icon
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MapView, { Marker } from 'react-native-maps';
 import BottomNavBar from './BottomNavBar';
 import Car from './ProductDetails/Car';
@@ -26,11 +26,40 @@ import Others from './ProductDetails/Others';
 
 const ProductDetails = () => {
     const [buyerId, setBuyerId] = useState(null);
-    const [isFollowed, setIsFollowed] = useState(false); // State to track follow status
+    const [isFollowed, setIsFollowed] = useState(false);
+    const [product, setProduct] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     const navigation = useNavigation();
     const route = useRoute();
-    const { product } = route.params;
-    console.log(JSON.stringify(product, null, 2));
+    const { productDetails } = route.params;
+    const productId = productDetails.id;
+
+    useEffect(() => {
+        const fetchProductDetails = async () => {
+            try {
+                const token = await AsyncStorage.getItem('authToken');
+                const apiURL = `${process.env.BASE_URL}/posts/${productId}`;
+                console.log('Fetching product details from:', apiURL);
+                const response = await fetch(apiURL, {
+                    method: 'GET',
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setProduct(data.data);
+                } else {
+                    console.error('Failed to fetch product details.');
+                }
+            } catch (error) {
+                console.error('Error fetching product details:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProductDetails();
+    }, [productId]);
 
     useEffect(() => {
         const loadBuyerId = async () => {
@@ -41,32 +70,49 @@ const ProductDetails = () => {
                 console.error('Failed to load buyer ID:', error);
             }
         };
-        loadBuyerId();
 
-        if (product && typeof product.follower !== 'undefined') {
-            setIsFollowed(product.follower); // Update isFollowed based on product.follower
-        }
+        loadBuyerId();
+    }, []);
+
+    useEffect(() => {
+        setIsFollowed(product?.follower || false);
     }, [product]);
 
+    if (isLoading) {
+        return (
+            <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#007bff" />
+                <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+        );
+    }
+
+    if (!product) {
+        return (
+            <View style={styles.notFoundContainer}>
+                <Icon name="alert-circle-outline" size={50} color="gray" />
+                <Text style={styles.notFoundText}>Product Not Found</Text>
+            </View>
+        );
+    }
+
     const toggleFollow = async () => {
+        console.log('toggle post follow');
         try {
-            const token = await AsyncStorage.getItem('authToken'); // Fetch token for authentication
+            const token = await AsyncStorage.getItem('authToken');
             const response = await fetch(`${process.env.BASE_URL}/follow-post`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`, // Include auth token
+                    Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    post_id: product.id, // Assuming product contains the company ID
-                }),
+                body: JSON.stringify({ post_id: product.id }),
             });
+
             if (response.ok) {
-                const data = await response.json();
-                console.log(data.message); // Log response message
-                setIsFollowed((prev) => !prev); // Toggle follow state locally
+                setIsFollowed((prev) => !prev);
             } else {
-                console.error('Failed to follow/unfollow the company.');
+                console.error('Failed to follow/unfollow.');
             }
         } catch (error) {
             console.error('Error in toggleFollow:', error);
@@ -76,17 +122,11 @@ const ProductDetails = () => {
     const handleChatWithSeller = () => {
         if (buyerId) {
             navigation.navigate('ChatBox', {
-                sellerId: product.user_id,
+                sellerId: product.user?.id,
                 buyerId,
                 postId: product.id
             });
-        } else {
-            console.log("Buyer ID not found");
         }
-    };
-
-    const handleCallPress = () => {
-        console.log("Calling functionality would be implemented here.");
     };
 
     const handleMapPress = () => {
@@ -186,7 +226,7 @@ const ProductDetails = () => {
         <View style={styles.container}>
             <ScrollView>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageContainer}>
-                    {product.images.map((image, index) => (
+                    {product.images?.map((image, index) => (
                         <TouchableOpacity
                             key={index}
                             onPress={() => navigation.navigate('ImageViewer', { images: product.images, selectedImageIndex: index })}
@@ -197,21 +237,28 @@ const ProductDetails = () => {
                 </ScrollView>
 
                 <View style={styles.detailsCard}>
+                    {renderDetails()}
+                </View>
+
+                <View style={styles.detailsCard}>
                     <View style={styles.companyHeader}>
-                        <Text style={styles.companyName} onPress={() => navigation.navigate('CompanyDetailsPage', { userId: product.user.id })}>
-                            Company: {product.user.name}
-                        </Text>
-                        <TouchableOpacity onPress={toggleFollow}>
-                            <Icon
-                                name={isFollowed ? 'heart' : 'heart-outline'}
-                                size={28}
-                                color={isFollowed ? 'red' : 'gray'}
-                                style={styles.heartIcon}
+                        <View style={styles.profileContainer}>
+                            <Image
+                                source={
+                                    product.user?.profile_image
+                                        ? { uri: product.user.profile_image }
+                                        : require('../assets/icon.png') // Local default image
+                                }
+                                style={styles.profileImage}
                             />
+                            <Text style={styles.companyName}>
+                                Posted By: {product.user?.name || 'Unknown'}
+                            </Text>
+                        </View>
+                        <TouchableOpacity onPress={toggleFollow}>
+                            <Icon name={isFollowed ? 'heart' : 'heart-outline'} size={28} color={isFollowed ? 'red' : 'gray'} />
                         </TouchableOpacity>
                     </View>
-                    {renderDetails()}
-
                 </View>
 
                 <View style={styles.detailsCard}>
@@ -244,18 +291,6 @@ const ProductDetails = () => {
                     </View>
                 </View>
             </ScrollView>
-
-            {buyerId && buyerId !== product.user_id && (
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.chatButton} onPress={handleChatWithSeller}>
-                        <Text style={styles.buttonText}>Chat</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.callButton} onPress={handleCallPress}>
-                        <Text style={styles.buttonText}>Call</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
             <BottomNavBar />
         </View>
     );
@@ -319,6 +354,42 @@ const styles = StyleSheet.create({
     map: {
         height: '100%',
         width: '100%'
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#007bff',
+    },
+    notFoundContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+    },
+    notFoundText: {
+        marginTop: 10,
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#6c757d',
+    },
+    profileContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    profileImage: {
+        width: 40, // Bigger profile image
+        height: 40,
+        borderRadius: 20, // Makes it circular
+        marginRight: 10, // Spacing between image and text
+        borderWidth: 1, // Optional border for a clean look
+        borderColor: '#ddd',
     },
 });
 

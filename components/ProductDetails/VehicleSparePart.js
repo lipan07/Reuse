@@ -1,63 +1,46 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import styles from '../../assets/css/productDetailsCard.styles';
 
-const VehicleSparePart = ({ product }) => {
+const VehicleSparePart = ({ product, isFollowed, toggleFollow }) => {
+    if (!product?.post_details) {
+        return <Text style={styles.errorText}>Vehicle spare part details are not available.</Text>;
+    }
+
     return (
         <View style={styles.container}>
-            <Text style={styles.productTitle}>{product.title}</Text>
+            {/* Header with Title & Follow Icon */}
+            <View style={styles.header}>
+                <Text style={styles.productTitle}>{product.title || 'No Title'}</Text>
+                <TouchableOpacity onPress={toggleFollow}>
+                    <Icon
+                        name={isFollowed ? 'heart' : 'heart-outline'}
+                        size={28}
+                        color={isFollowed ? 'red' : 'gray'}
+                        style={styles.heartIcon}
+                    />
+                </TouchableOpacity>
+            </View>
 
+            {/* Type */}
             <View style={styles.detailRow}>
                 <Text style={styles.label}>Type:</Text>
-                <Text style={styles.value}>{product.post_details.type}</Text>
+                <Text style={styles.value}>{product.post_details?.type || 'N/A'}</Text>
             </View>
 
+            {/* Description */}
             <View style={styles.descriptionContainer}>
                 <Text style={styles.label}>Description:</Text>
-                <Text style={styles.description}>{product.post_details.description}</Text>
+                <Text style={styles.description}>
+                    {product.post_details?.description || 'No description available'}
+                </Text>
             </View>
 
-            <Text style={styles.price}>Price: ${product.post_details.amount}</Text>
+            {/* Price */}
+            <Text style={styles.price}>Price: ${product.post_details?.amount || 'N/A'}</Text>
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        padding: 15,
-    },
-    productTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        marginBottom: 8,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginRight: 5,
-    },
-    value: {
-        fontSize: 16,
-        color: '#555',
-    },
-    descriptionContainer: {
-        marginVertical: 10,
-    },
-    description: {
-        fontSize: 15,
-        color: '#555',
-        lineHeight: 20,
-    },
-    price: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: 'green',
-        marginTop: 10,
-    },
-});
 
 export default VehicleSparePart;

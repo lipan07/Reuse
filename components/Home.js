@@ -10,6 +10,8 @@ import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/nativ
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
+const PAGE_SIZE = 15;
+
 const Home = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -19,146 +21,162 @@ const Home = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(route.params?.filters?.category || null);
+  const [search, setSearch] = useState(route.params?.filters?.search || '');
   const [showMenu, setShowMenu] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const searchRef = useRef(search);
+  const selectedCategoryRef = useRef(selectedCategory);
 
   const lastScrollY = useRef(0);
 
-  // useEffect(() => {
-  //   // Set filters from route.params when navigating with filters
-  //   if (route.params?.filters) {
-  //     setFilters(route.params.filters);
-  //   }
-  // }, [route.params]);
+  const [activeFilters, setActiveFilters] = useState({
+    search: route.params?.filters?.search || '',
+    category: route.params?.filters?.category || null,
+    priceRange: route.params?.filters?.priceRange || [],
+    sortBy: route.params?.filters?.sortBy || 'Recently Added',
+    distance: route.params?.filters?.distance || 5,
+    location: route.params?.filters?.location || null
+  });
+
+  const handleClearFilter = (filterKey) => {
+    setActiveFilters(prev => {
+      const updated = { ...prev };
+      if (filterKey === 'priceRange') {
+        updated[filterKey] = [];
+      } else if (filterKey === 'sortBy') {
+        updated[filterKey] = 'Recently Added';
+      } else {
+        updated[filterKey] = null;
+      }
+      return updated;
+    });
+
+    fetchProducts(true, { ...activeFilters, [filterKey]: null });
+  };
 
   useEffect(() => {
+    if (route.params?.filters) {
+      setActiveFilters(route.params.filters);
+      setFilters(route.params.filters);
+      setSearch(route.params.filters.search || '');
+      setSelectedCategory(route.params.filters.category || null);
+    }
     if (route.params?.products) {
-      // Set filtered products if passed from the filter page
       setProducts(route.params.products);
-      setFilters(route.params.filters || {});
-      setHasMore(false); // Disable infinite scroll for filtered data
+      setHasMore(false);
     }
   }, [route.params]);
 
   useFocusEffect(
     useCallback(() => {
-      console.log('Screen focused - Initializing');
-      const apiURL = `${process.env.BASE_URL}/posts`;
-      const param = {};
+      console.log('Home Screen Focused');
 
-      if (selectedCategory) {
-        param.category = selectedCategory;
+      // Only fetch products if route.params.products is empty
+      if (!route.params?.products) {
+        if (products.length === 0 || selectedCategoryRef.current !== selectedCategory || searchRef.current !== search) {
+          const param = {};
+          if (selectedCategoryRef.current) {
+            param.category = selectedCategoryRef.current;
+          }
+          if (searchRef.current) {
+            param.search = searchRef.current.trim();
+          }
+          fetchProducts(true, param);
+        }
       }
-      if (search.trim()) {
-        param.search = search;
-      }
 
-      console.log('API Parameters on Focus:', param);
-      fetchProducts(true, param);
-
-      // Cleanup function for when the screen loses focus
       return () => {
-        console.log('Screen unfocused - Cleanup if needed');
+        console.log('Home Screen Unfocused');
       };
-    }, [selectedCategory])
+    }, [products.length, selectedCategory, search, route.params?.products])
   );
 
-  // Add debounce to handle input changes
-  const debounceTimeout = useRef(null);
-  const handleInputChange = (text) => {
-    setSearch(text);
-
-    // Cancel any existing debounce timers
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-
-    // Set a new debounce timer (e.g., 500ms delay)
-    debounceTimeout.current = setTimeout(() => {
-      console.log('Debounced search input:', text);
-      // Optionally, you can auto-save recent searches here
-    }, 500);
-  };
-
-  // useEffect(() => {
-  //   loadRecentSearches();
-  // }, []);
-
-  // const loadRecentSearches = async () => {
-  //   try {
-  //     const storedSearches = await AsyncStorage.getItem('recentSearches');
-  //     if (storedSearches) {
-  //       setRecentSearches(JSON.parse(storedSearches));
-  //     }
-  //   } catch (error) {
-  //     console.error("Error loading recent searches:", error);
-  //   }
-  // };
-
-  // const addRecentSearch = async (searchText) => {
-  //   if (searchText.trim()) {
-  //     const updatedSearches = [searchText, ...recentSearches.filter((item) => item !== searchText)].slice(0, 5);
-  //     await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
-  //     setRecentSearches(updatedSearches);
-  //   }
-  // };
-
-  const fetchProducts = async (reset = false, param = null) => {
+  const fetchProducts = useCallback(async (reset = false, param = null) => {
     console.log('param- ', param);
     const token = await AsyncStorage.getItem('authToken');
-    if (isLoading) return;
+    if (isLoading || (!reset && !hasMore)) return;
 
     setIsLoading(true);
-    let apiURL = `${process.env.BASE_URL}/posts?page=1`;
+    let apiURL = `${process.env.BASE_URL}/posts`;
 
-    // Append additional query parameters if `param` has data
-    if (param && Object.keys(param).length > 0) {
-      const queryParams = new URLSearchParams(param).toString();
-      apiURL += `&${queryParams}`;
-    }
-    console.log('apiUrl- ', apiURL);
-    const requestOptions = {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${token}` },
+    // Build query parameters with pagination
+    const baseParams = {
+      page: reset ? 1 : currentPage,
+      limit: PAGE_SIZE,
+      ...cleanParams(param || {}) // Clean the parameters
     };
 
+    const queryParams = new URLSearchParams(baseParams).toString();
+    apiURL += `?${queryParams}`;
+
+    console.log('apiUrl- ', apiURL);
+
     try {
-      const response = await fetch(apiURL, requestOptions);
+      const response = await fetch(apiURL, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Handle response errors
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
       const jsonResponse = await response.json();
-      // console.log(jsonResponse);
+
+      // Handle empty response
       if (!jsonResponse.data || jsonResponse.data.length === 0) {
-        setProducts([]);
+        setProducts(reset ? [] : products);
         setHasMore(false);
-      } else if (reset) {
-        setProducts(jsonResponse.data);
-      } else {
-        setProducts((prevProducts) => [...prevProducts, ...jsonResponse.data]);
+        return;
       }
 
-      // setCurrentPage(page);
-      setHasMore(jsonResponse.data && jsonResponse.data.length === 15 && jsonResponse.links.next != null);
+      // Update products and pagination state
+      if (reset) {
+        setProducts(jsonResponse.data);
+        setCurrentPage(1);
+      } else {
+        setProducts(prev => [...prev, ...jsonResponse.data]);
+        setCurrentPage(prev => prev + 1);
+      }
+
+      // Determine if more pages exist
+      setHasMore(jsonResponse.data.length === PAGE_SIZE);
+
     } catch (error) {
       console.error('Failed to load products', error);
+      Alert.alert('Error', 'Failed to load products. Please try again later.');
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
+  }, [isLoading, currentPage, hasMore, products]);
+
+  const cleanParams = (params) => {
+    return Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        if (Array.isArray(value) && value.length === 0) {
+          return acc;
+        }
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
   };
+  // Modified scroll handler for pagination
+  const handleScrollEndReached = useCallback(() => {
+    if (!isLoading && hasMore) {
+      console.log('Loading more products...');
+      fetchProducts(false, {
+        search: activeFilters.search,
+        category: activeFilters.category,
+        page: currentPage + 1,
+        ...activeFilters
+      });
+    }
+  }, [isLoading, hasMore, activeFilters, fetchProducts]);
 
-  // useEffect(() => {
-  //   const subscription = DeviceEventEmitter.addListener('refreshHome', () => {
-  //     setSelectedCategory(null);
-  //     fetchProducts(1, null, true);
-  //   });
-
-  //   return () => {
-  //     subscription.remove();
-  //   };
-  // }, []);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -171,17 +189,18 @@ const Home = () => {
     checkLoginStatus();
   }, []);
 
-  const handleScrollEndReached = () => {
-    if (!isLoading && hasMore) {
-      console.log('Scrollend call');
-      // fetchProducts(currentPage + 1);
-    }
-  };
+  // const handleScrollEndReached = () => {
+  //   if (!isLoading && hasMore) {
+  //     console.log('Scrollend call');
+  //     const param = { page: currentPage + 1 };
+  //     fetchProducts(false, param);
+  //   }
+  // };
 
   const handleRefresh = () => {
     setRefreshing(true);
     console.log('Refresh call');
-    fetchProducts(true);
+    fetchProducts(true, { ...activeFilters, page: 1 });
   };
 
   const handleScroll = (event) => {
@@ -194,45 +213,50 @@ const Home = () => {
     lastScrollY.current = currentScrollY;
   };
 
-  const handleCategorySelect = (categoryId) => {
-    setSelectedCategory(categoryId);
-    console.log('Category select call- ', categoryId);
-    var param = { 'category': categoryId };
-    if (search) { param.search = search };
-    fetchProducts(true, param);
+  const handleInputChange = (text) => {
+    setSearch(text);
+    searchRef.current = text;
   };
 
-  // const handleInputChange = (text) => {
-  //   setSearch(text);
-  //   // setShowRecentSearches(true);
-  // };
+  const handleCategorySelect = (categoryId) => {
+    setSelectedCategory(categoryId);
+    selectedCategoryRef.current = categoryId;
+    const param = { category: categoryId };
+    if (searchRef.current || search) {
+      param.search = searchRef.current ?? search;
+    }
+    fetchProducts(true, cleanParams(param));
+  };
 
   const handleSearchPress = () => {
     console.log('Search button pressed');
-    const param = { search: search.trim() };
+    const param = {};
+    if (search) {
+      param.search = search.trim();
+    }
     if (selectedCategory) {
       param.category = selectedCategory;
     }
-    fetchProducts(true, param);
+    console.log('Search Button Enter-', param);
+    fetchProducts(true, cleanParams(param));
   };
-
-  // const handleRecentSearchSelect = (searchText) => {
-  //   setSearch(searchText);
-  //   handleSearchPress();
-  // };
 
   const clearSearch = () => {
     setSearch('');
-    // setSelectedCategory('');
-    console.log('Clear search call');
-    if (selectedCategory) { var param = { 'category': selectedCategory } }
-    fetchProducts(true, param);
+    setActiveFilters(prevState => ({
+      ...prevState,
+      search: ''
+    }));
+    searchRef.current = '';
+    const param = selectedCategory ? { category: selectedCategory } : {};
+    console.log('Clear search called with params:', param);
+    fetchProducts(true, cleanParams(param)); // Add cleanParams here
   };
 
   const renderProductItem = ({ item }) => (
     <TouchableOpacity
       style={styles.productItem}
-      onPress={() => navigation.navigate('ProductDetails', { product: item })}
+      onPress={() => navigation.navigate('ProductDetails', { productDetails: item })}
     >
       <View style={styles.imageContainer}>
         <Swiper style={styles.swiper} showsPagination autoplay autoplayTimeout={3}>
@@ -270,7 +294,12 @@ const Home = () => {
               <Icon name="close" size={20} color="#888" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.filterButton} onPress={() => navigation.navigate('FilterScreen')}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => navigation.navigate('FilterScreen', {
+              initialFilters: { ...activeFilters, search, category: selectedCategory }
+            })}
+          >
             <Icon name="filter-list" size={24} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
@@ -278,43 +307,43 @@ const Home = () => {
           </TouchableOpacity>
         </View>
 
-        {/* {showRecentSearches && recentSearches.length > 0 && (
-          <View style={styles.recentSearchOverlay}>
-            {recentSearches.map((item, index) => (
-              <TouchableOpacity key={index} onPress={() => handleRecentSearchSelect(item)}>
-                <Text style={styles.recentSearchItem}>{item}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )} */}
-
-        {showMenu && <CategoryMenu onCategorySelect={handleCategorySelect} />}
+        {showMenu && <CategoryMenu onCategorySelect={handleCategorySelect} selectedCategory={selectedCategory} />}
 
         {isLoading && products.length === 0 && (
           <ActivityIndicator size="large" color="#007bff" style={styles.loaderTop} />
         )}
-
         <FlatList
           data={products}
           renderItem={renderProductItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => `${item.id}_${currentPage}`} // Unique key per page
           numColumns={2}
           contentContainerStyle={styles.productList}
           onEndReached={handleScrollEndReached}
-          onEndReachedThreshold={0.1}
+          onEndReachedThreshold={0.5} // More natural trigger point
           onScroll={handleScroll}
           scrollEventThrottle={16}
           ListEmptyComponent={() => (
             !isLoading && <Text style={styles.noProductsText}>No products found</Text>
           )}
           ListFooterComponent={
-            products.length > 0 ? (
-              isLoading && hasMore ? <ActivityIndicator size="large" color="#007bff" style={styles.loaderBottom} /> : null
-            ) : null
+            hasMore && (
+              <ActivityIndicator
+                size="large"
+                color="#007bff"
+                style={styles.loaderBottom}
+              />
+            )
           }
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+            />
           }
+          removeClippedSubviews={true} // Optimize memory
+          initialNumToRender={10} // Optimize initial load
+          maxToRenderPerBatch={10} // Optimize scroll performance
+          windowSize={21} // Render window size
         />
 
         <BottomNavBar navigation={navigation} />
@@ -395,6 +424,28 @@ const styles = StyleSheet.create({
   loaderTop: { marginBottom: 10 },
   loaderBottom: { marginTop: 10 },
   noProductsText: { fontSize: 16, textAlign: 'center', marginTop: 20 },
+  filterBadgeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  filterBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007bff',
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    margin: 4,
+  },
+  filterBadgeText: {
+    color: '#fff',
+    marginRight: 8,
+    fontSize: 14,
+  },
 });
 
 export default Home;

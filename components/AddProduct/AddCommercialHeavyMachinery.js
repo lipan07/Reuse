@@ -13,11 +13,13 @@ const AddCommercialHeavyMachinery = ({ route }) => {
     year: currentYear,
     fuelType: 'Diesel',
     transmission: 'Manual',
-    conditionType: 'Used',
+    condition: 'Fair',
     owners: '1st',
     listedBy: 'Owner',
     adTitle: '',
     description: '',
+    contact_name: '',
+    contact_phone: '',
     amount: '',
     images: [], // Updated to handle multiple images
   });
@@ -62,7 +64,7 @@ const AddCommercialHeavyMachinery = ({ route }) => {
   };
 
   const handleConditionSelection = (type) => {
-    setFormData({ ...formData, conditionType: type });
+    setFormData({ ...formData, condition: type });
   };
 
   const handleTransmissionSelection = (type) => {
@@ -87,6 +89,26 @@ const AddCommercialHeavyMachinery = ({ route }) => {
       });
     }
   };
+
+  const brands = [
+    { label: 'Select Brand', value: '' },
+    { label: 'Caterpillar', value: 'Caterpillar' },
+    { label: 'JCB', value: 'JCB' },
+    { label: 'Tata Hitachi', value: 'Tata Hitachi' },
+    { label: 'Volvo', value: 'Volvo' },
+    { label: 'Komatsu', value: 'Komatsu' },
+    { label: 'L&T Construction Equipment', value: 'L&T Construction Equipment' },
+    { label: 'BEML (Bharat Earth Movers Limited)', value: 'BEML (Bharat Earth Movers Limited)' },
+    { label: 'Hyundai Construction Equipment', value: 'Hyundai Construction Equipment' },
+    { label: 'SANY', value: 'Sany' },
+    { label: 'Case Construction', value: 'Case Construction' },
+    { label: 'Doosan', value: 'Doosan' },
+    { label: 'Mahindra Construction Equipment', value: 'Mahindra Construction Equipment' },
+    { label: 'LiuGong', value: 'LiuGong' },
+    { label: 'John Deere', value: 'John Deere' },
+    { label: 'XCMG', value: 'XCMG' },
+    { label: 'Others', value: 'Others' }
+  ];
 
   const handleSubmit = async () => {
     submitForm(formData, subcategory)  // Use the centralized function
@@ -116,35 +138,21 @@ const AddCommercialHeavyMachinery = ({ route }) => {
             onValueChange={(value) => handleChange('brand', value)}
             style={styles.input}
           >
-            <Picker.Item label="Select Brand" value="" />
-            <Picker.Item value="caterpillar" label="Caterpillar" />
-            <Picker.Item value="jcb" label="JCB" />
-            <Picker.Item value="tata_hitachi" label="Tata Hitachi" />
-            <Picker.Item value="volvo" label="Volvo" />
-            <Picker.Item value="komatsu" label="Komatsu" />
-            <Picker.Item value="l_t_c_e" label="L&T Construction Equipment" />
-            <Picker.Item value="beml" label="BEML (Bharat Earth Movers Limited)" />
-            <Picker.Item value="h_c_e" label="Hyundai Construction Equipment" />
-            <Picker.Item value="sany" label="SANY" />
-            <Picker.Item value="cc" label="Case Construction" />
-            <Picker.Item value="doosan" label="Doosan" />
-            <Picker.Item value="mce" label="Mahindra Construction Equipment" />
-            <Picker.Item value="liugong" label="LiuGong" />
-            <Picker.Item value="john_deere" label="John Deere" />
-            <Picker.Item value="xcmg" label="XCMG" />
-            <Picker.Item value="others" label="Others" />
+            {brands.map((brand, index) => (
+              <Picker.Item key={index} label={brand.label} value={brand.value} />
+            ))}
           </Picker>
 
           {/* Condition Selection */}
           <Text style={styles.label}>Condition *</Text>
           <View style={styles.optionContainer}>
-            {['New', 'Used', 'Needs Repair'].map((condition) => (
+            {['New', 'Like new', 'Fair', 'Needs repair'].map((condition) => (
               <TouchableOpacity
                 key={condition}
-                style={[styles.optionButton, formData.conditionType === condition && styles.selectedOption]}
+                style={[styles.optionButton, formData.condition === condition && styles.selectedOption]}
                 onPress={() => handleConditionSelection(condition)}
               >
-                <Text style={formData.conditionType === condition ? styles.selectedText : styles.optionText}>{condition}</Text>
+                <Text style={formData.condition === condition ? styles.selectedText : styles.optionText}>{condition}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -168,7 +176,7 @@ const AddCommercialHeavyMachinery = ({ route }) => {
           {/* Fuel Type Selection */}
           <Text style={styles.label}>Fuel Type *</Text>
           <View style={styles.optionContainer}>
-            {['Diesel', 'Electric', 'Others'].map((fuel) => (
+            {['Diesel', 'Electric', 'Petrol', 'Others'].map((fuel) => (
               <TouchableOpacity
                 key={fuel}
                 style={[styles.optionButton, formData.fuelType === fuel && styles.selectedOption]}
@@ -251,6 +259,25 @@ const AddCommercialHeavyMachinery = ({ route }) => {
             onChangeText={(value) => handleChange('description', value)}
           />
 
+          {/* Contact Name */}
+          <Text style={styles.label}>Contact Name *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Contact Name"
+            value={formData.contact_name}
+            onChangeText={(value) => handleChange('contact_name', value)}
+          />
+
+          {/* Contact Phone */}
+          <Text style={styles.label}>Contact Phone *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Contact Phone"
+            keyboardType="phone-pad"
+            value={formData.contact_phone}
+            onChangeText={(value) => handleChange('contact_phone', value)}
+          />
+
           {/* Amount Field */}
           <Text style={styles.label}>Amount *</Text>
           <TextInput
@@ -280,7 +307,7 @@ const AddCommercialHeavyMachinery = ({ route }) => {
           <Button title="Submit" onPress={handleSubmit} />
         </View>
       </KeyboardAvoidingView>
-    </AlertNotificationRoot>
+    </AlertNotificationRoot >
   );
 };
 

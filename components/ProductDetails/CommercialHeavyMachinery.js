@@ -1,108 +1,56 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import styles from '../../assets/css/productDetailsCard.styles';
 
-const CommercialHeavyMachinery = ({ product }) => {
+const CommercialHeavyMachinery = ({ product, isFollowed, toggleFollow }) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.productTitle}>{product.title}</Text>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Brand:</Text>
-                <Text style={styles.value}>{product.post_details.brand}</Text>
+            {/* Header with Title and Follow Icon */}
+            <View style={styles.header}>
+                <Text style={styles.productTitle}>{product.title || 'No Title'}</Text>
+                <TouchableOpacity onPress={toggleFollow}>
+                    <Icon
+                        name={isFollowed ? 'heart' : 'heart-outline'}
+                        size={28}
+                        color={isFollowed ? 'red' : 'gray'}
+                        style={styles.heartIcon}
+                    />
+                </TouchableOpacity>
             </View>
 
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Model Year:</Text>
-                <Text style={styles.value}>{product.post_details.year}</Text>
+            {/* Machinery Details */}
+            <View style={styles.detailsContainer}>
+                {renderDetailRow('Brand', product.post_details?.brand)}
+                {renderDetailRow('Model Year', product.post_details?.year)}
+                {renderDetailRow('Condition', product.post_details?.condition)}
+                {renderDetailRow('Fuel Type', product.post_details?.fuel)}
+                {renderDetailRow('Owner', product.post_details?.owner)}
+                {renderDetailRow('KM Driven', product.post_details?.km_driven)}
+                {renderDetailRow('No. of Owners', product.post_details?.no_of_owner)}
+                {renderDetailRow('Listed By', product.post_details?.listed_by)}
+                {renderDetailRow('Contact Name', product.post_details?.contact_name)}
+                {renderDetailRow('Contact Phone', product.post_details?.contact_phone)}
             </View>
 
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Condition:</Text>
-                <Text style={styles.value}>{product.post_details.condition}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Fuel Type:</Text>
-                <Text style={styles.value}>{product.post_details.fuel}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Owner:</Text>
-                <Text style={styles.value}>{product.post_details.owner}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>KM Driven:</Text>
-                <Text style={styles.value}>{product.post_details.km_driven}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Owner:</Text>
-                <Text style={styles.value}>{product.post_details.no_of_owner}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Listed By:</Text>
-                <Text style={styles.value}>{product.post_details.listed_by}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Contact Name:</Text>
-                <Text style={styles.value}>{product.post_details.contact_name}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Contact Phone:</Text>
-                <Text style={styles.value}>{product.post_details.contact_phone}</Text>
-            </View>
-
+            {/* Description Section */}
             <View style={styles.descriptionContainer}>
                 <Text style={styles.label}>Description:</Text>
-                <Text style={styles.description}>{product.post_details.description}</Text>
+                <Text style={styles.description}>{product.post_details?.description || 'No description available'}</Text>
             </View>
 
-            <Text style={styles.price}>Price: ${product.post_details.amount}</Text>
+            {/* Price Display */}
+            <Text style={styles.price}>Price: ${product.post_details?.amount || 'N/A'}</Text>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        padding: 15,
-    },
-    productTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        marginBottom: 8,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginRight: 5,
-    },
-    value: {
-        fontSize: 16,
-        color: '#555',
-    },
-    descriptionContainer: {
-        marginVertical: 10,
-    },
-    description: {
-        fontSize: 15,
-        color: '#555',
-        lineHeight: 20,
-    },
-    price: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: 'green',
-        marginTop: 10,
-    },
-});
+/** Reusable function to render detail rows */
+const renderDetailRow = (label, value) => (
+    <View style={styles.detailRow}>
+        <Text style={styles.label}>{label}:</Text>
+        <Text style={styles.value}>{value || 'N/A'}</Text>
+    </View>
+);
 
 export default CommercialHeavyMachinery;

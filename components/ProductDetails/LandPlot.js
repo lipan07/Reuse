@@ -1,88 +1,51 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import styles from '../../assets/css/productDetailsCard.styles';
 
-const LandPlot = ({ product }) => {
+const LandPlot = ({ product, isFollowed, toggleFollow }) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.productTitle}>{product.title}</Text>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>ListedBy:</Text>
-                <Text style={styles.value}>{product.post_details.listed_by}</Text>
+            {/* Header with Title and Follow Icon */}
+            <View style={styles.header}>
+                <Text style={styles.productTitle}>{product.title || 'No Title'}</Text>
+                <TouchableOpacity onPress={toggleFollow}>
+                    <Icon
+                        name={isFollowed ? 'heart' : 'heart-outline'}
+                        size={30}
+                        color={isFollowed ? 'red' : 'gray'}
+                    />
+                </TouchableOpacity>
             </View>
 
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Carpet Area:</Text>
-                <Text style={styles.value}>{product.post_details.carpet_area}</Text>
+            {/* Property Details in a bordered box */}
+            <View style={styles.detailsContainer}>
+                {renderDetailRow('Listed By', product.post_details?.listed_by)}
+                {renderDetailRow('Carpet Area', product.post_details?.carpet_area)}
+                {renderDetailRow('Length', product.post_details?.length)}
+                {renderDetailRow('Breadth', product.post_details?.breadth)}
+                {renderDetailRow('Facing', product.post_details?.facing)}
+                {renderDetailRow('Project Name', product.post_details?.project_name)}
             </View>
 
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Length:</Text>
-                <Text style={styles.value}>{product.post_details.length}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Breadth:</Text>
-                <Text style={styles.value}>{product.post_details.breadth}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Facing:</Text>
-                <Text style={styles.value}>{product.post_details.facing}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Project Name:</Text>
-                <Text style={styles.value}>{product.post_details.project_name}</Text>
-            </View>
-
+            {/* Description */}
             <View style={styles.descriptionContainer}>
                 <Text style={styles.label}>Description:</Text>
-                <Text style={styles.description}>{product.post_details.description}</Text>
+                <Text style={styles.description}>{product.post_details?.description || 'N/A'}</Text>
             </View>
 
-            <Text style={styles.price}>Price: ${product.post_details.amount}</Text>
+            {/* Price */}
+            <Text style={styles.price}>Price: ${product.post_details?.amount || 'N/A'}</Text>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        padding: 15,
-    },
-    productTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        marginBottom: 8,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginRight: 5,
-    },
-    value: {
-        fontSize: 16,
-        color: '#555',
-    },
-    descriptionContainer: {
-        marginVertical: 10,
-    },
-    description: {
-        fontSize: 15,
-        color: '#555',
-        lineHeight: 20,
-    },
-    price: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: 'green',
-        marginTop: 10,
-    },
-});
+/** Helper function to render property details */
+const renderDetailRow = (label, value) => (
+    <View style={styles.detailRow}>
+        <Text style={styles.label}>{label}:</Text>
+        <Text style={styles.value}>{value || 'N/A'}</Text>
+    </View>
+);
 
 export default LandPlot;
