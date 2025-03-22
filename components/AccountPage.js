@@ -20,7 +20,7 @@ const AccountPage = ({ navigation }) => {
                     <Text style={styles.editButtonText}>Edit Profile</Text>
                 </TouchableOpacity>
             </View>
-            {renderAccountLink('Followers', 'users', () => navigation.navigate('FollowersPage'), '#4CAF50')}
+            {/* {renderAccountLink('Followers', 'users', () => navigation.navigate('FollowersPage'), '#4CAF50')} */}
             {renderAccountLink('Following', 'users', () => navigation.navigate('FollowingPage'), '#FF9800')}
             {renderAccountLink('Buy Packages', 'shopping-cart', () => navigation.navigate('PackagePage'), '#FF9800')}
             {renderAccountLink('Settings', 'cog', () => navigation.navigate('Settings'), '#2196F3')}

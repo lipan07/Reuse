@@ -1,78 +1,57 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import styles from '../../assets/css/productDetailsCard.styles';
 
-const Job = ({ product }) => {
+const Job = ({ product, isFollowed, toggleFollow }) => {
+    if (!product?.post_details) {
+        return <Text style={styles.errorText}>Job details are not available.</Text>;
+    }
+
     return (
         <View style={styles.container}>
-            <Text style={styles.productTitle}>{product.title}</Text>
+            {/* Header with Job Title & Follow Icon */}
+            <View style={styles.header}>
+                <Text style={styles.productTitle}>{product.title || 'No Title'}</Text>
+                <TouchableOpacity onPress={toggleFollow}>
+                    <Icon
+                        name={isFollowed ? 'heart' : 'heart-outline'}
+                        size={28}
+                        color={isFollowed ? 'red' : 'gray'}
+                        style={styles.heartIcon}
+                    />
+                </TouchableOpacity>
+            </View>
 
+            {/* Job Details */}
             <View style={styles.detailRow}>
                 <Text style={styles.label}>Salary Period:</Text>
-                <Text style={styles.value}>{product.post_details.salary_period}</Text>
+                <Text style={styles.value}>{product.post_details?.salary_period || 'N/A'}</Text>
             </View>
 
             <View style={styles.detailRow}>
                 <Text style={styles.label}>Position Type:</Text>
-                <Text style={styles.value}>{product.post_details.position_type}</Text>
+                <Text style={styles.value}>{product.post_details?.position_type || 'N/A'}</Text>
             </View>
 
             <View style={styles.detailRow}>
-                <Text style={styles.label}>Salary_from:</Text>
-                <Text style={styles.value}>{product.post_details.salary_from}</Text>
+                <Text style={styles.label}>Salary Range:</Text>
+                <Text style={styles.value}>
+                    {product.post_details?.salary_from && product.post_details?.salary_to
+                        ? `$${product.post_details.salary_from} - $${product.post_details.salary_to}`
+                        : 'N/A'}
+                </Text>
             </View>
 
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Salry To:</Text>
-                <Text style={styles.value}>{product.post_details.salary_to}</Text>
-            </View>
-
+            {/* Job Description */}
             <View style={styles.descriptionContainer}>
                 <Text style={styles.label}>Description:</Text>
-                <Text style={styles.description}>{product.post_details.description}</Text>
+                <Text style={styles.description}>
+                    {product.post_details?.description || 'No description available'}
+                </Text>
             </View>
-
-            <Text style={styles.price}>Price: ${product.post_details.amount}</Text>
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        padding: 15,
-    },
-    productTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        marginBottom: 8,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginRight: 5,
-    },
-    value: {
-        fontSize: 16,
-        color: '#555',
-    },
-    descriptionContainer: {
-        marginVertical: 10,
-    },
-    description: {
-        fontSize: 15,
-        color: '#555',
-        lineHeight: 20,
-    },
-    price: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: 'green',
-        marginTop: 10,
-    },
-});
 
 export default Job;

@@ -66,12 +66,12 @@ const SettingsPage = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={styles.linkItem} onPress={handlePasswordChange}>
-                <Icon name="key-variant" size={24} color="#4B9CD3" style={styles.icon} />
+            {/* <TouchableOpacity style={styles.linkItem} onPress={handlePasswordChange}>
+                <Icon name="key-variant" size={24} color="#D9534F" style={styles.icon} />
                 <Text style={styles.linkText}>Change Password</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <TouchableOpacity style={styles.linkItem} onPress={handleDeleteAccount}>
-                <Icon name="delete-outline" size={24} color="#D9534F" style={styles.icon} />
+                <Icon name="delete-outline" size={24} color="#4B9CD3" style={styles.icon} />
                 <Text style={styles.linkText}>Delete Account</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.linkItem} onPress={handleLogoutAllDevices}>

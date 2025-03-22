@@ -12,11 +12,13 @@ const AddCommercialHeavyVehicle = ({ route }) => {
     brand: '',
     year: currentYear,
     fuelType: 'Diesel',
-    conditionType: 'Used',
+    condition: 'Fair',
     owners: '1st',
     listedBy: 'Owner',
     adTitle: '',
     description: '',
+    contact_name: '',
+    contact_phone: '',
     amount: '',
     images: [],
   });
@@ -60,7 +62,7 @@ const AddCommercialHeavyVehicle = ({ route }) => {
   };
 
   const handleConditionSelection = (type) => {
-    setFormData({ ...formData, conditionType: type });
+    setFormData({ ...formData, condition: type });
   };
 
   const handleTransmissionSelection = (type) => {
@@ -86,6 +88,30 @@ const AddCommercialHeavyVehicle = ({ route }) => {
       });
     }
   };
+
+  const vehicleBrands = [
+    'Tata Motors Limited',
+    'Mahindra & Mahindra Limited',
+    'Eicher Motors Limited',
+    'Ashok Leyland Limited',
+    'Force Motors Limited',
+    'SML ISUZU Limited',
+    'Hindustan Motors',
+    "Daimler India Commercial Vehicles' BharatBenz",
+    'Volvo Trucks',
+    'Asia Motorworks',
+    'Scania Commercial Vehicles India Pvt. Ltd.',
+    'MAN Trucks India Pvt. Ltd.',
+    'Iveco',
+    'Bharat Earth Movers Limited (BEML)',
+    'JCB India Limited',
+    'Komatsu India Private Limited',
+    'Caterpillar India',
+    'John Deere India Private Limited',
+    'Case New Holland Construction Equipment India Private Limited',
+    'L&T Construction Equipment Limited',
+    'Others',
+  ];
 
   const handleSubmit = async () => {
     submitForm(formData, subcategory)  // Use the centralized function
@@ -113,30 +139,23 @@ const AddCommercialHeavyVehicle = ({ route }) => {
             onValueChange={(value) => handleChange('brand', value)}
             style={styles.picker}
           >
-            <Picker.Item label="Select Type" value="" />
-            <Picker.Item value="auto-rickshaws-&amp;-e-rickshaws" label="Auto-rickshaws &amp; E-rickshaws" />
-            <Picker.Item value="buses" label="Buses" />
-            <Picker.Item value="trucks" label="Trucks" />
-            <Picker.Item value="heavy-machinery" label="Heavy Machinery" />
-            <Picker.Item value="modified-jeeps" label="Modified Jeeps" />
-            <Picker.Item value="pick-up-vans-/-pick-up-trucks" label="Pick-up vans / Pick-up trucks" />
-            <Picker.Item value="scrap-cars" label="Scrap Cars" />
-            <Picker.Item value="taxi-cabs" label="Taxi Cabs" />
-            <Picker.Item value="tractors" label="Tractors" />
-            <Picker.Item value="others" label="Others" />
+            <Picker.Item label="Select Brand" value="" />
+            {vehicleBrands.map((brand, index) => (
+              <Picker.Item key={index} label={brand} value={brand} />
+            ))}
           </Picker>
 
 
           {/* Condition Selection */}
           <Text style={styles.label}>Condition *</Text>
           <View style={styles.optionContainer}>
-            {['New', 'Used', 'Needs Repair'].map((condition) => (
+            {['New', 'Like new', 'Fair', 'Needs repair'].map((condition) => (
               <TouchableOpacity
                 key={condition}
-                style={[styles.optionButton, formData.conditionType === condition && styles.selectedOption]}
+                style={[styles.optionButton, formData.condition === condition && styles.selectedOption]}
                 onPress={() => handleConditionSelection(condition)}
               >
-                <Text style={formData.conditionType === condition ? styles.selectedText : styles.optionText}>{condition}</Text>
+                <Text style={formData.condition === condition ? styles.selectedText : styles.optionText}>{condition}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -227,6 +246,25 @@ const AddCommercialHeavyVehicle = ({ route }) => {
             value={formData.description}
             multiline
             onChangeText={(value) => handleChange('description', value)}
+          />
+
+          {/* Contact Name */}
+          <Text style={styles.label}>Contact Name *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Contact Name"
+            value={formData.contact_name}
+            onChangeText={(value) => handleChange('contact_name', value)}
+          />
+
+          {/* Contact Phone */}
+          <Text style={styles.label}>Contact Phone *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Contact Phone"
+            keyboardType="phone-pad"
+            value={formData.contact_phone}
+            onChangeText={(value) => handleChange('contact_phone', value)}
           />
 
           {/* Amount Field */}
