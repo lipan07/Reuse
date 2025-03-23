@@ -2,8 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../assets/css/productDetailsCard.styles';
+import useFollowPost from '../../hooks/useFollowPost';
 
-const HouseApartment = ({ product, isFollowed, toggleFollow }) => {
+const HouseApartment = ({ product }) => {
+    const { isFollowed, toggleFollow } = useFollowPost(product); // Use the hook
+
     return (
         <View style={styles.container}>
             {/* Header with Follow Icon */}

@@ -3,8 +3,11 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { toggleFollow } from '../../service/followPostService';
 import styles from '../../assets/css/productDetailsCard.styles';
+import useFollowPost from '../../hooks/useFollowPost';
 
-const Electronics = ({ product, isFollowed, toggleFollow }) => {
+const Electronics = ({ product }) => {
+    const { isFollowed, toggleFollow } = useFollowPost(product); // Use the hook
+
     if (!product?.post_details) {
         return <Text style={styles.errorText}>Product details are not available.</Text>;
     }

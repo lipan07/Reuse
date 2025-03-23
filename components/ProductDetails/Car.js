@@ -2,11 +2,13 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../assets/css/productDetailsCard.styles';
+import useFollowPost from '../../hooks/useFollowPost'; // Import the hook
 
-const Car = ({ product, isFollowed, toggleFollow }) => {
+const Car = ({ product }) => {
+    const { isFollowed, toggleFollow } = useFollowPost(product); // Use the hook
+
     return (
         <View style={styles.container}>
-            {/* Header with Title and Follow Icon */}
             <View style={styles.header}>
                 <Text style={styles.productTitle}>{product.title || 'No Title'}</Text>
                 <TouchableOpacity onPress={toggleFollow}>

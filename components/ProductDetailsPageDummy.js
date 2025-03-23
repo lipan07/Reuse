@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native';
+import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -47,7 +47,6 @@ const ProductDetails = () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('product details:', data.data);
                     setProduct(data.data);
                 } else {
                     console.error('Failed to fetch product details.');
@@ -131,9 +130,10 @@ const ProductDetails = () => {
     };
 
     const handleMapPress = () => {
-        const addressQuery = encodeURIComponent(product.address || "Unknown Location");
-        const url = `https://www.google.com/maps/search/?api=1&query=22.6992,88.3902, 22.6670,88.3796`;
-        Linking.openURL(url).catch(() => Alert.alert("Error", "Could not open Google Maps"));
+        navigation.navigate('FullScreenMap', {
+            latitude: product.latitude || 22.680360,
+            longitude: product.longitude || 88.393776,
+        });
     };
 
     const renderDetails = () => {
@@ -262,13 +262,33 @@ const ProductDetails = () => {
                 </View>
 
                 <View style={styles.detailsCard}>
-                    <Text style={styles.addressHeader}>Address: </Text>
-                    <TouchableOpacity onPress={handleMapPress}>
-                        <Text style={[styles.addressTextLink, styles.centerAlign]}>
-                            {/* 📍 {product.address || "Location not available"} */}
-                            📍 {"Agarpara, Ghola, Kolkata-700109, India" || "Location not available"}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={styles.mapAddressContainer}>
+                        <View style={styles.addressContainer}>
+                            <Text style={styles.addressHeader}>Location Details</Text>
+                            <Text style={styles.addressText}>Latitude: {product.latitude}</Text>
+                            <Text style={styles.addressText}>Longitude: {product.longitude}</Text>
+                        </View>
+                        <TouchableOpacity onPress={handleMapPress} style={styles.mapContainer} activeOpacity={0.9}>
+                            <MapView
+                                style={styles.map}
+                                initialRegion={{
+                                    latitude: product.latitude || 22.5726,
+                                    longitude: product.longitude || 88.3639,
+                                    latitudeDelta: 0.02,
+                                    longitudeDelta: 0.02,
+                                }}
+                                provider="google" // Use Google Maps
+                                scrollEnabled={false} // Make map non-interactive
+                            >
+                                <Marker
+                                    coordinate={{
+                                        latitude: product.latitude || 22.5726,
+                                        longitude: product.longitude || 88.3639,
+                                    }}
+                                />
+                            </MapView>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </ScrollView>
             <BottomNavBar />
@@ -370,45 +390,6 @@ const styles = StyleSheet.create({
         marginRight: 10, // Spacing between image and text
         borderWidth: 1, // Optional border for a clean look
         borderColor: '#ddd',
-    },
-    addressHeader: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 5
-    },
-    addressTextLink: {
-        fontSize: 16,
-        color: '#007bff',
-        textDecorationLine: 'underline',
-        marginTop: 5,
-    },
-    loaderContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f8f9fa',
-    },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#007bff',
-    },
-    notFoundContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f8f9fa',
-    },
-    notFoundText: {
-        marginTop: 10,
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#6c757d',
-    },
-    centerAlign: {
-        alignItems: 'center', // Centers items horizontally
-        justifyContent: 'center', // Centers items vertically (if needed)
     },
 });
 
